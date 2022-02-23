@@ -5,13 +5,13 @@ from telegram.ext import Updater, CommandHandler
 
 import random
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-cred = credentials.Certificate("INSERT FIREBASE CERTIFICATE HERE")
-firebase_admin.initialize_app(cred)
+# import firebase_admin
+# from firebase_admin import credentials
+# from firebase_admin import firestore
+# cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
+# firebase_admin.initialize_app(cred)
 
-firestore_db = firestore.client()
+# firestore_db = firestore.client()
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -20,7 +20,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 PORT = int(os.environ.get('PORT', '8443'))
-TOKEN = """insert telegram token here"""
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -28,7 +28,7 @@ TOKEN = """insert telegram token here"""
 def start(update, context):
     # do sth
     print("start")
-        
+
 
 def error(update, context):
     """Log Errors caused by Updates."""
@@ -48,9 +48,9 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("inspireme", inspire))
-    dp.add_handler(CommandHandler('addquote', add))
-    dp.add_handler(CommandHandler('about', about))
+    # dp.add_handler(CommandHandler("inspireme", inspire))
+    # dp.add_handler(CommandHandler('addquote', add))
+    # dp.add_handler(CommandHandler('about', about))
 
     # log all errors
     dp.add_error_handler(error)
@@ -60,7 +60,7 @@ def main():
                           port=PORT,
                           url_path=TOKEN)
 
-    updater.bot.set_webhook("""insert APP_NAME here""" + TOKEN)
+    updater.bot.set_webhook(os.getenv("APP_NAME") + TOKEN)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
