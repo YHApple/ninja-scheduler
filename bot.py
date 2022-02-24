@@ -402,7 +402,7 @@ def precheckout_callback(update, context):
         query.answer(ok=False, error_message="Something went wrong...")
     else:
         print("working here")
-        payload_split = update.pre_checkout_query.split('/')
+        payload_split = update.pre_checkout_query.invoice_payload.split('/')
         print(payload_split)
         update_db_after_payment(payload_split[2], payload_split[1])
         query.answer(ok=True)
