@@ -1,13 +1,7 @@
 import logging
 import os
-import datetime
-from datetime import date, timedelta
-from flask import Flask
-import threading
-import json
 from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-# from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
 import firebase_admin
 from firebase_admin import firestore
@@ -24,10 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 PORT = int(os.environ.get('PORT', '8443'))
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-APP_NAME = os.getenv("APP_NAME")
+TOKEN = os.getenv("TELEGRAM_TEST_TOKEN")
+APP_NAME = os.getenv("TEST_APP_NAME")
 
-app = Flask(__name__)
 
 def get_chat_id(update, context):
     chat_id = -1
@@ -53,18 +46,32 @@ def get_update_keyboard():
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
+
+# def query_handler(update, context):
+#     # Here, we'll have access to the user's answer
+#     query = update.callback_query
+#     query.answer()
+#
+#     # Change your comparisons depending on what you chose as 'callback_data'
+#     if query.data == 'wrong':
+#         wrong = "Sorry, that's not the right answer. Try again."
+#         context.bot.send_message(chat_id=update.effective_chat.id, text=wrong)
+#     if query.data == 'right':
+#         right = "Congratulations! You have chosen the right answer."
+#         context.bot.send_message(chat_id=update.effective_chat.id, text=right)
+#
+#     return
+
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
-def start(update, context):
-    # doc = firestore_db.collection(u'users').document(u'1').get()
-    # doc_dict = doc.to_dict()
-    # name = doc_dict['name']
-    # update.message.reply_text(name)
-    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?')
-    # input from text message
-    
+START_GREETING = 'Welcome to Ninja Scheduler! How can I help you with your delivery today?'
 
-def viewType(update, context):
+
+def start(update, context):
+    context.bot.send_message(chat_id=get_chat_id(update, context), text=START_GREETING)
+
+
+def view_type(update, context):
     # retrieve the deliveryType from firestore
     if update.message.text.strip() == '/view': 
         update.message.reply_text("Please specify the order which you wish to check the delivery type! \n Usage:/view [orderId] \n eg. /view 100")
@@ -77,81 +84,8 @@ def viewType(update, context):
         deliveryType = doc_dict['deliveryType']
         context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
     
-# def getDate(date):
-#     splitDate = date.split(" at ")
-#     d = datetime.strptime(splitDate[0], '%d %B %Y')
-#     return d
 
-# def dateInRange(dateToCheck, minDate, maxDate):
-#     return minDate >= dateToCheck and dateToCheck <= maxDate
-
-# def setDate(update, context):
-#     # update the delivery date on firestore
-#     doc = firestore_db.collection(u'users').document(u'1').get()
-#     doc_dict = doc.to_dict()
-#     deliveryDate = doc_dict['deliveryDate']
-#     deliveryType = doc_dict['deliveryType']
-#     # context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
-#     if update.message.text.strip() == '/setdate': 
-#         update.message.reply_text("Please specify the date to reschedule to! \n Usage:/setdate [dd-mm-yy] \n eg. /upgrade 02/24/22")
-#     else:
-#         deliveryDateConv = getDate(deliveryDate)
-#         command = update.message.text.split(" ")
-#         inputDate = datetime.strptime(command[0], '%d/%m/%y')
-#         if deliveryType == 'standard':
-#             # restrict date range to 3-7
-#             minDate = deliveryDateConv + datetime.timedelta(days=3)
-#             maxDate = deliveryDateConv + datetime.timedelta(days=7)
-#             if not dateInRange(inputDate, minDate, maxDate):
-#                 update.message.reply_text('Date out of range')
-#             else:
-#                 doc.update({ "deliveryDate" : inputDate })
-#             # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#         elif deliveryType == 'express':
-#             # restrict date range to 7
-#             minDate = deliveryDateConv + datetime.timedelta(days=1)
-#             maxDate = deliveryDateConv + datetime.timedelta(days=7)
-#             if not dateInRange(inputDate, minDate, maxDate):
-#                 update.message.reply_text('Date out of range')
-#             else:
-#                 doc.update({ "deliveryDate" : inputDate })
-#             # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#         else:
-#             # restrict date range to 3-14
-#             minDate = deliveryDateConv + datetime.timedelta(days=3)
-#             maxDate = deliveryDateConv + datetime.timedelta(days=14)
-#             if not dateInRange(inputDate, minDate, maxDate):
-#                 update.message.reply_text('Date out of range')
-#             else:
-#                 doc.update({ "deliveryDate" : inputDate })
-#             # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-
-# def reschedule(update, context):
-#     if update.message.text.strip() == '/reschedule': 
-#         update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
-#     else:
-#         # update the deliveryDate and update the numReschedules
-#         order = firestore_db.collection(u'orders').document(u'1').get()
-#         order_dict = order.to_dict()
-#         #check if rescheduling is allowed
-#         numReschedules = order_dict['numReschedules']
-#         if numReschedules > 2:
-#             context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
-#         else:
-#             pickUpDate = order_dict['pickUpDate'].date()
-#             deliveryType = order_dict['deliveryType']
-#             userInput = update.message.text
-#             splitInput = userInput.split('/')
-#             rescheduleDate = datetime.datetime(splitInput[2], splitInput[1], splitInput[0])
-#             if 0 < rescheduleDate - pickUpDate <= 7:
-#                 context.bot.send_message(chat_id=get_chat_id(update, context), text="Your reschedule date must be within 7 days!")
-#             else:
-#                 numReschedules += 1
-#                 order.update({ "numReschedules" : numReschedules })
-#                 order.update({ "deliveryDate" : rescheduleDate })
-#                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDate}")
-
-def upgradePlan(update, context):
+def upgrade_plan(update, context):
     # Check if command usage is correct
     if update.message.text.strip() == '/upgrade': 
         update.message.reply_text("Please specify the type of plan you want to upgrade to! \n Usage:/upgrade [orderId] [deliveryType] \n eg. /upgrade 100 time-slot")
@@ -173,6 +107,7 @@ def upgradePlan(update, context):
         else:
             update.message.reply_text("You are already at the highest delivery tier! Do /reschedule if you wish to reschedule your package.")
 
+
 def upgrade_from_standard(update, del_type, order_ref):
     if del_type == "standard":
         update.message.reply_text("You are already at this tier.")
@@ -182,7 +117,8 @@ def upgrade_from_standard(update, del_type, order_ref):
             "deliveryType": del_type
         })
         update.message.reply_text("Successfully upgraded to " + del_type + "!")
-    
+
+
 def upgrade_from_express(update, del_type, order_ref):
     if del_type == "standard" or del_type == "express":
         update.message.reply_text("You are already at/above this tier. Do /reschedule if you wish to reschedule your package.")
@@ -199,8 +135,6 @@ def error(update, context):
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
 
-
-
 def main():
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
@@ -213,8 +147,8 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("upgrade", upgradePlan))
-    dp.add_handler(CommandHandler("view", viewType))
+    dp.add_handler(CommandHandler("upgrade", upgrade_plan))
+    dp.add_handler(CommandHandler("view", view_type))
 
     # log all errors
     dp.add_error_handler(error)
@@ -233,7 +167,4 @@ def main():
 
 
 if __name__ == '__main__':
-    first_thread = threading.Thread(target=app.run)
-    second_thread = threading.Thread(target=main)
-    first_thread.start()
-    second_thread.start()
+    main()
