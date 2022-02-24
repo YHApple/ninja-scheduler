@@ -192,7 +192,8 @@ def reschedule_order(update, context, order_id):
     back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
 
     if numReschedules <= 0:
-        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
+                   InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
         keyboard = InlineKeyboardMarkup([options])
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
@@ -244,7 +245,8 @@ def reschedule(update, context):
         #check if rescheduling is allowed
         numReschedules = order_dict['numReschedules']
         if numReschedules == 0:
-            options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+            options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
+                       InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
             keyboard = InlineKeyboardMarkup([options])
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?",
