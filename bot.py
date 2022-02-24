@@ -9,22 +9,7 @@ import random
 import firebase_admin
 from firebase_admin import firestore
 
-# cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-
-cred_dict = {
-    "type": "service_account",
-  "project_id": "ninja-scheduler-4b901",
-  "private_key_id": os.getenv("FIRESTORE_PRIVATE_KEY_ID"),
-  "private_key": os.getenv("FIRESTORE_PRIVATE_KEY"),
-  "client_email": "firebase-adminsdk-t77zz@ninja-scheduler-4b901.iam.gserviceaccount.com",
-  "client_id": "107085050770394748504",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-t77zz%40ninja-scheduler-4b901.iam.gserviceaccount.com"
-}
-
-print(cred_dict)
+cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
 
 cred = firebase_admin.credentials.Certificate(cred_dict)
 
