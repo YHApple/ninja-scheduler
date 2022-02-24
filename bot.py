@@ -88,6 +88,7 @@ def start(update, context):
                              reply_markup=get_update_keyboard())
     # input from text message
 
+
 def convert_order_to_button(order_id, action):
     return InlineKeyboardButton(text=str(order_id), callback_data= action + "-order-id-" + str(order_id))
 
@@ -392,7 +393,7 @@ def payment(update, context, current_type, new_type, type_description):
                              title=new_type,
                              description=type_description,
                              payload="Custom-Payload",
-                             provider_token="284685063:TEST:MzA0NGRlNzJmMjFl",
+                             provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
                              currency="SGD",
                              prices=[LabeledPrice("Payment for " + new_type + " delivery", get_price() * 100)],
                              start_parameter="asdhjasdj")
