@@ -181,6 +181,7 @@ def dateInRange(dateToCheck, minDate, maxDate):
     return minDate <= dateToCheck <= maxDate
 
 def reschedule_order(update, context, order_id):
+    print("DFGA")
     selected, rescheduledDateTime = telegramcalendar.process_calendar_selection(update, context)
     order = firestore_db.collection(u'orders').document(order_id).get()
     order_dict = order.to_dict()
