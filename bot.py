@@ -81,10 +81,13 @@ def query_handler(update, context):
         upgrade_to_timeslot(update, context, order_id)
     elif "9-12" in query.data:
         order_id = query.data[11:-19]
+        print(order_id)
         date = query.data[-16:-6]
+        print(date)
         reschedule_to_time(update, context, date, order_id, 9)
     elif "12-15" in query.data:
         order_id = query.data[11:-20]
+        print(order_id)
         date = query.data[-16:-6]
         reschedule_to_time(update, context, date, order_id, 12)
     elif "15-18" in query.data:
@@ -182,19 +185,12 @@ def dateInRange(dateToCheck, minDate, maxDate):
 
 def reschedule_order(update, context, order_id):
     selected, rescheduledDateTime = telegramcalendar.process_calendar_selection(update, context)
-    print(rescheduledDateTime)
     order = firestore_db.collection(u'orders').document(order_id).get()
-    print(order)
     order_dict = order.to_dict()
-    print(order_dict)
     deliveryDate = order_dict['deliveryDate'].replace(tzinfo=None)
-    print(deliveryDate)
     deliveryType = order_dict['deliveryType']
-    print(deliveryType)
     numReschedules = int(order_dict['numReschedules'])
-    print(numReschedules)
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
-    print(pickUpDate)
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if numReschedules <= 0:
