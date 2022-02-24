@@ -67,7 +67,8 @@ def query_handler(update, context):
         context.bot.send_message(chat_id=get_chat_id(update, context), text='Please select a date:',
                                  reply_markup=telegramcalendar.create_calendar(order_id))
     elif "reschedule-order-id-" in query.data:
-        order_id = query.data[20:]
+        splitQuery = query.data.split(';')
+        order_id = splitQuery[0][20:]
         reschedule_order(update, context, order_id)
     elif "upgrade-order-id-" in query.data:
         order_id = query.data[17:]
