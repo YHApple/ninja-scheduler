@@ -50,6 +50,7 @@ def start(update, context):
     # doc_dict = doc.to_dict()
     # name = doc_dict['name']
     # update.message.reply_text(name)
+    print("Test")
     options = []
     options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
     options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
