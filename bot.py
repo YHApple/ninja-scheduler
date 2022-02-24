@@ -3,6 +3,7 @@ import os
 import json
 
 from telegram.ext import Updater, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import random
 
@@ -27,6 +28,21 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
 
+def get_chat_id(update, context):
+    chat_id = -1
+
+    if update.message is not None:
+        # text message
+        chat_id = update.message.chat.id
+    elif update.callback_query is not None:
+        # callback message
+        chat_id = update.callback_query.message.chat.id
+    elif update.poll is not None:
+        # answer in Poll
+        chat_id = context.bot_data[update.poll.id]
+
+    return chat_id
+
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
@@ -48,11 +64,6 @@ def start(update, context):
     if choice == '1':
     # Choice 1: Text
         update.callback_query.message.edit_text('You have chosen Text')
-
-
-
-    
-
 
 def error(update, context):
     """Log Errors caused by Updates."""
