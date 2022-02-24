@@ -1,1 +1,1 @@
-web: python3 bot.py
+web: pip install flask && python bot.py

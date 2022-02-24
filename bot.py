@@ -1,7 +1,11 @@
 import logging
 import os
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
+import datetime
+from flask import Flask
+import threading
+import json
+from telegram.ext import Updater, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import firebase_admin
 from firebase_admin import firestore
@@ -130,7 +134,116 @@ def get_order(update, context, order_id):
                                  text="Sorry, unable to retrieve order.")
 
 
-def upgrade_plan(update, context):
+def viewType(update, context):
+    # retrieve the deliveryType from firestore
+    if update.message.text.strip() == '/view': 
+        update.message.reply_text("Please specify the order which you wish to check the delivery type! \n Usage:/view [orderId] \n eg. /view 100")
+    else: 
+        # Obtain arguments of the command
+        command = update.message.text.split(" ")
+        order_id = command[1]    
+        doc = firestore_db.collection(u'orders').document(order_id).get()
+        doc_dict = doc.to_dict()
+        deliveryType = doc_dict['deliveryType']
+        context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
+    
+def getDate(date):
+    splitDate = date.split(" at ")
+    d = datetime.strptime(splitDate[0], '%d %B %Y')
+    return d
+
+def dateInRange(dateToCheck, minDate, maxDate):
+    return minDate >= dateToCheck and dateToCheck <= maxDate
+
+def setDate(update, context):
+    # update the delivery date on firestore
+    doc = firestore_db.collection(u'users').document(u'1').get()
+    doc_dict = doc.to_dict()
+    deliveryDate = doc_dict['deliveryDate']
+    deliveryType = doc_dict['deliveryType']
+    # context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
+    if update.message.text.strip() == '/setdate': 
+        update.message.reply_text("Please specify the date to reschedule to! \n Usage:/setdate [dd-mm-yy] \n eg. /upgrade 02/24/22")
+    else:
+        deliveryDateConv = getDate(deliveryDate)
+        command = update.message.text.split(" ")
+        inputDate = datetime.strptime(command[0], '%d/%m/%y')
+        if deliveryType == 'standard':
+            # restrict date range to 3-7
+            minDate = deliveryDateConv + datetime.timedelta(days=3)
+            maxDate = deliveryDateConv + datetime.timedelta(days=7)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+        elif deliveryType == 'express':
+            # restrict date range to 7
+            minDate = deliveryDateConv + datetime.timedelta(days=1)
+            maxDate = deliveryDateConv + datetime.timedelta(days=7)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+        else:
+            # restrict date range to 3-14
+            minDate = deliveryDateConv + datetime.timedelta(days=3)
+            maxDate = deliveryDateConv + datetime.timedelta(days=14)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+
+def reschedule(update, context):
+    if update.message.text.strip() == '/reschedule': 
+        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
+    else:
+        # update the deliveryDate and update the numReschedules
+        order = firestore_db.collection(u'orders').document(u'1').get()
+        order_dict = order.to_dict()
+        #check if rescheduling is allowed
+        numReschedules = order_dict['numReschedules']
+        if numReschedules >= 2:
+            context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
+        else:
+            deliveryType = order_dict['deliveryType']
+            pickUpDate = order_dict['pickUpDate'].date()
+            today = datetime.now().replace(hour=0, minute=0)
+            print(today)
+
+            userInput = update.message.text
+            #split date and time
+            splitInput = userInput.split(' ')
+            print(splitInput)
+            #split day/month/year
+            splitDate = splitInput.split('/')
+            rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
+
+            if deliveryType=="standard":
+                minDate = today + datetime.timedelta(days=3)
+                maxDate = pickUpDate + datetime.timedelta(days=7) 
+            elif deliveryType=="express" or deliveryType=="timeslot":
+                minDate = today + datetime.timedelta(days=1)
+                maxDate = pickUpDate + datetime.timedelta(days=7)
+            else:
+                minDate = today + datetime.timedelta(days=1)
+                maxDate = pickUpDate + datetime.timedelta(days=14)
+
+            if "timeslot" in deliveryType:
+                time = userInput[1]
+                rescheduleDateTime.replace(hour=int(time[:2]), minute=int(time[2:]))
+    
+            if not dateInRange(rescheduleDateTime, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                numReschedules += 1
+                order.update({ "numReschedules" : numReschedules })
+                order.update({ "deliveryDate" : rescheduleDateTime })
+                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
+
+def upgradePlan(update, context):
     # Check if command usage is correct
     if update.message.text.strip() == '/upgrade': 
         update.message.reply_text("Please specify the type of plan you want to upgrade to! \n Usage:/upgrade [orderId] [deliveryType] \n eg. /upgrade 100 time-slot")
@@ -212,4 +325,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    first_thread = threading.Thread(target=main)
+    second_thread = threading.Thread(target=app.run)
+    first_thread.start()
+    second_thread.start()
