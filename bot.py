@@ -1,7 +1,8 @@
 import logging
 import os
-
+from flask import Flask
 from telegram.ext import Updater, CommandHandler
+import threading
 
 import random
 
@@ -23,6 +24,7 @@ PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
+app = Flask(__name__)
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
@@ -66,4 +68,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    first_thread = threading.Thread(target=app.run)
+    second_thread = threading.Thread(target=main)
+    first_thread.start()
+    second_thread.start()

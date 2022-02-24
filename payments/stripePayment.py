@@ -1,9 +1,10 @@
 import os
-from flask import Flask, redirect, request
+from flask import request
 import stripe
 
-# This is your test secret API key.
-app = Flask(__name__)
+from bot import app
+
+STRIPE_KEY = os.getenv('STRIPE_KEY')
 
 def get_delivery_types():
     stripe.api_key = os.getenv('STRIPE_KEY')
@@ -72,6 +73,3 @@ def payment_failure(session):
     # TODO: Add logic for failure
     print(session.failure_message)
     print("Failed to process payment, please try again.")
-
-if __name__ == '__main__':
-    app.run(port=4242)
