@@ -1,7 +1,7 @@
 import logging
 import os
 import datetime
-from flask import Flask
+#from flask import Flask
 import threading
 import json
 from telegram.ext import Updater, CommandHandler
@@ -26,7 +26,7 @@ PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
-app = Flask(__name__)
+#app = Flask(__name__)
 
 def get_chat_id(update, context):
     chat_id = -1
