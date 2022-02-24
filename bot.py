@@ -172,16 +172,16 @@ def inline_calendar_handler(update, context):
     deliveryDate = doc_dict['deliveryDate']
     deliveryType = doc_dict['deliveryType']
     pickUpDate = doc_dict['pickUpDate']
-    today = datetime.datetime.now().replace(hour=0, minute=0)
+    # today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if deliveryType == "standard" and selected:
-        minDate = today + datetime.timedelta(days=3)
+        minDate = pickUpDate + datetime.timedelta(days=3)
         maxDate = pickUpDate + datetime.timedelta(days=7)
     elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
-        minDate = today + datetime.timedelta(days=1)
+        minDate = pickUpDate + datetime.timedelta(days=1)
         maxDate = pickUpDate + datetime.timedelta(days=7)
     elif deliveryType == "14-day" and selected:
-        minDate = today + datetime.timedelta(days=1)
+        minDate = pickUpDate + datetime.timedelta(days=1)
         maxDate = pickUpDate + datetime.timedelta(days=14)
 
     if dateInRange(date, minDate, maxDate):
