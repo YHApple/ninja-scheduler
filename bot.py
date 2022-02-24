@@ -168,7 +168,7 @@ def get_order(update, context, order_id):
         num_res = order_dict["numReschedules"]
         text = "Your order {} is due to arrive by {}. \n The current delivery type for this order is: " \
                "{}.\n You have {} reschedules left.\n What do you want to do? "
-        formatted_text = text.format(order_id, date_time, del_type, str(2 - int(num_res)))
+        formatted_text = text.format(order_id, date_time, del_type, str(num_res))
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=formatted_text,
                                  reply_markup=get_order_keyboard(order_id))
