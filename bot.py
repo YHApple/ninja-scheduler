@@ -8,10 +8,9 @@ import random
 
 import firebase_admin
 from firebase_admin import firestore
+from firebase_admin import credentials
 
 cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-
-cred = firebase_admin.credentials.Certificate(cred_dict)
 
 firebase_admin.initialize_app(cred)
 
