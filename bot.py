@@ -88,6 +88,7 @@ def start(update, context):
                              reply_markup=get_update_keyboard())
     # input from text message
 
+
 def convert_order_to_button(order_id, action):
     return InlineKeyboardButton(text=str(order_id), callback_data= action + "-order-id-" + str(order_id))
 
@@ -312,13 +313,7 @@ def upgrade_to_express(update, context, order_id):
                                      text=ALREADY_AT_HIGHER_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            firestore_db.collection(u'orders').document(order_id).update({
-                "deliveryType": "express"
-            })
-            payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!")
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text=UPGRADE_EXPRESS_SUCCESS_MESSAGE,
-                                     reply_markup=get_update_keyboard())
+            payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!", order_id)
 
 
     except Exception as e:
@@ -342,20 +337,13 @@ def upgrade_to_timeslot(update, context, order_id):
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            firestore_db.collection(u'orders').document(order_id).update({
-                "deliveryType": "timeslot"
-            })
-            payment(update, context, del_type, "14day-timeslot",
-                    "Choose the time slot which you want to receive your parcel (within 7 days)!")
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text=UPGRADE_TIMESLOT_SUCCESS_MESSAGE,
-                                     reply_markup=get_update_keyboard())
-
-
+            payment(update, context, del_type, "timeslot",
+                    "Choose the time slot which you want to receive your parcel (within 7 days)!", order_id)
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
 
 def upgrade_to_14day(update, context, order_id):
     try:
@@ -368,15 +356,12 @@ def upgrade_to_14day(update, context, order_id):
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
+        elif del_type == "express":
+            payment(update, context, del_type, "14day-timeslot",
+                    "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
         else:
-            payment(update, context, del_type, "14day-standard",
-                    "Not at home in the coming week? Delay your delivery up to 14 days!")
-            firestore_db.collection(u'orders').document(order_id).update({
-                "deliveryType": "14day " + del_type
-            })
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text="Successfully upgraded to 14day " + del_type + " tier!",
-                                     reply_markup=get_update_keyboard())
+            payment(update, context, del_type, "14day-" + del_type,
+                    "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
 
     except Exception as e:
         print(e)
@@ -384,21 +369,27 @@ def upgrade_to_14day(update, context, order_id):
                                  text=UPGRADE_FAIL_MESSAGE)
 
 
-def payment(update, context, current_type, new_type, type_description):
+def payment(update, context, current_type, new_type, type_description, order_id):
     def get_price():
         prices = {
-            "standard": 5,
-            "express": 6,
-            "time-slot": 7,
-            "14day-standard": 8,
-            "14day-timeslot": 9
+            "standard": 3,
+            "express": 5,
+            "timeslot": 7,
+            "14day-standard": 9,
+            "14day-timeslot": 11
         }
         return prices[new_type] - prices[current_type]
+
+    print("Price function", get_price())
+    print("current_type", current_type)
+    print("new_type", new_type)
+    print("dec", type_description)
+    print("oid", order_id)
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title=new_type,
                              description=type_description,
-                             payload="Custom-Payload",
-                             provider_token="284685063:TEST:MzA0NGRlNzJmMjFl",
+                             payload="ninja-scheduler/" + new_type + "/" + order_id,
+                             provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
                              currency="SGD",
                              prices=[LabeledPrice("Payment for " + new_type + " delivery", get_price() * 100)],
                              start_parameter="asdhjasdj")
@@ -408,12 +399,24 @@ def payment(update, context, current_type, new_type, type_description):
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     query = update.pre_checkout_query
+    print("inside pre checkout function")
+    print(query)
     # check the payload, is this from your bot?
-    if query.invoice_payload != 'Custom-Payload':
+    if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     else:
+        print("working here")
+        payload_split = update.pre_checkout_query.invoice_payload.split('/')
+        print(payload_split)
+        update_db_after_payment(payload_split[2], payload_split[1])
         query.answer(ok=True)
+
+
+def update_db_after_payment(order_id, del_type):
+    firestore_db.collection(u'orders').document(order_id).update({
+        "deliveryType": del_type
+    })
 
 
 # finally, after contacting the payment provider...
@@ -441,6 +444,9 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CallbackQueryHandler(query_handler))
+
+    dp.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+    dp.add_handler(MessageHandler(Filters.successful_payment, successful_payment_callback))
 
     # log all errors
     dp.add_error_handler(error)
