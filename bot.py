@@ -193,7 +193,7 @@ def inline_calendar_handler(update, context):
                 "numReschedules": str(numReschedules)
             })
             firestore_db.collection(u'orders').document(u'200').update({
-                { "deliveryDate": rescheduledDateTime}
+                { "deliveryDate": rescheduledDateTime.strftime("%d/%m/%Y") }
             })
             context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduledDateTime}"
                                      ,reply_markup=ReplyKeyboardRemove())
