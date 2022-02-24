@@ -64,7 +64,6 @@ def query_handler(update, context):
         get_order(update, context, order_id)
     elif "reschedule_orders_action" in query.data:
         order_id = query.data[24:]
-        print(order_id)
         context.bot.send_message(chat_id=get_chat_id(update, context), text='Please select a date:',
                                  reply_markup=telegramcalendar.create_calendar(order_id))
     elif "reschedule-order-id-" in query.data:
@@ -181,14 +180,18 @@ def dateInRange(dateToCheck, minDate, maxDate):
     return minDate <= dateToCheck <= maxDate
 
 def reschedule_order(update, context, order_id):
-    print("DFGA")
     selected, rescheduledDateTime = telegramcalendar.process_calendar_selection(update, context)
+    print(rescheduledDateTime)
     order = firestore_db.collection(u'orders').document(order_id).get()
     order_dict = order.to_dict()
     deliveryDate = order_dict['deliveryDate'].replace(tzinfo=None)
+    print(deliveryDate)
     deliveryType = order_dict['deliveryType']
+    print(deliveryType)
     numReschedules = int(order_dict['numReschedules'])
+    print(numReschedules)
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
+    print(pickUpDate)
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if numReschedules <= 0:
