@@ -56,7 +56,7 @@ def start(update, context):
     # doc_dict = doc.to_dict()
     # name = doc_dict['name']
     # update.message.reply_text(name)
-    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?'.)
+    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?')
     # input from text message
     
 
