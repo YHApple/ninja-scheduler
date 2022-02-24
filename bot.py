@@ -125,7 +125,7 @@ def setDate(update, context):
 
 def reschedule(update, context):
     if update.message.text.strip() == '/reschedule': 
-        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg.")
+        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
     else:
         # update the deliveryDate and update the numReschedules
         order = firestore_db.collection(u'orders').document(u'1').get()
