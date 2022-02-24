@@ -215,7 +215,7 @@ def reschedule_order(update, context, order_id):
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
                                  text="Date is out of range",
-                                 reply_markup=ReplyKeyboardRemove())
+                                 reply_markup=InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id))
     # if deliveryType == "timeslot":
     # choose timeslot
 
