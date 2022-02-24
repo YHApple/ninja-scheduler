@@ -166,7 +166,7 @@ def set_date(update, context):
 def inline_calendar_handler(update, context):
     selected, date = telegramcalendar.process_calendar_selection(update, context)
     print('test test test')
-    doc = firestore_db.collection(u'orders').document(u'1').get()
+    doc = firestore_db.collection(u'orders').document(u'200').get()
     doc_dict = doc.to_dict()
     print(doc_dict)
     deliveryDate = doc_dict['deliveryDate']
