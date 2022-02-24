@@ -164,10 +164,11 @@ def set_date(update, context):
     update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
 
 def inline_calendar_handler(update, context):
-    date = telegramcalendar.process_calendar_selection(update, context)
+    selected, date = telegramcalendar.process_calendar_selection(update, context)
     print('test test test')
     doc = firestore_db.collection(u'users').document(u'1').get()
     doc_dict = doc.to_dict()
+    print(doc_dict)
     # deliveryDate = doc_dict['deliveryDate']
     deliveryType = doc_dict['deliveryType']
     # pickUpDate = doc_dict['pickUpDate']
@@ -176,15 +177,15 @@ def inline_calendar_handler(update, context):
     today = date
     print('DATTTEEEEEEE: ' + date)
 
-    # if deliveryType == "standard" and selected:
-    #     minDate = today + datetime.timedelta(days=3)
-    #     maxDate = pickUpDate + datetime.timedelta(days=7)
-    # elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
-    #     minDate = today + datetime.timedelta(days=1)
-    #     maxDate = pickUpDate + datetime.timedelta(days=7)
-    # elif deliveryType == "14-day" and selected:
-    #     minDate = today + datetime.timedelta(days=1)
-    #     maxDate = pickUpDate + datetime.timedelta(days=14)
+    if deliveryType == "standard" and selected:
+        minDate = today + datetime.timedelta(days=3)
+        maxDate = pickUpDate + datetime.timedelta(days=7)
+    elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
+        minDate = today + datetime.timedelta(days=1)
+        maxDate = pickUpDate + datetime.timedelta(days=7)
+    elif deliveryType == "14-day" and selected:
+        minDate = today + datetime.timedelta(days=1)
+        maxDate = pickUpDate + datetime.timedelta(days=14)
 
     if dateInRange(date, minDate, maxDate):
         context.bot.send_message(chat_id=update.callback_query.from_user.id,
