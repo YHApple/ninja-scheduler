@@ -331,9 +331,6 @@ def upgrade_to_timeslot(update, context, order_id):
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            firestore_db.collection(u'orders').document(order_id).update({
-                "deliveryType": "timeslot"
-            })
             payment(update, context, del_type, "timeslot",
                     "Choose the time slot which you want to receive your parcel (within 7 days)!", order_id)
     except Exception as e:
