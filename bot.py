@@ -373,7 +373,6 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("upgrade", upgrade_plan))
     dp.add_handler(CallbackQueryHandler(query_handler))
 
     # log all errors
