@@ -181,7 +181,10 @@ def inline_calendar_handler(update, context):
         elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
             minDate = today + datetime.timedelta(days=1)
             maxDate = today + datetime.timedelta(days=7)
-        elif deliveryType == "14-day" and selected:
+        elif deliveryType == "14day-standard" and selected:
+            minDate = today + datetime.timedelta(days=3)
+            maxDate = today + datetime.timedelta(days=14)
+        elif deliveryType == "14day-timeslot" and selected:
             minDate = today + datetime.timedelta(days=1)
             maxDate = today + datetime.timedelta(days=14)
 
