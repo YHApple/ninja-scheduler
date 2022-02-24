@@ -1,14 +1,12 @@
 import logging
 import os
 import datetime
-from flask import Flask
 import time
-import threading
-import json
 
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, ReplyKeyboardRemove
 import telegramcalendar
+
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, MessageHandler, Filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, LabeledPrice, ReplyKeyboardRemove
 
 import firebase_admin
 from firebase_admin import firestore
@@ -27,9 +25,6 @@ PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
-app = Flask(__name__)
-
-
 def get_chat_id(update, context):
     chat_id = -1
     if update.message is not None:
@@ -47,7 +42,7 @@ def get_chat_id(update, context):
 
 def get_update_keyboard():
     options = [InlineKeyboardButton(text='View Orders', callback_data='view_orders_action'),
-               InlineKeyboardButton(text='Upgrade Plans', callback_data='upgrade_plan_action_')]
+               InlineKeyboardButton(text='Upgrade Orders', callback_data='upgrade_orders_action_')]
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -61,8 +56,8 @@ def query_handler(update, context):
     # Change your comparisons depending on what you chose as 'callback_data'
     if query.data == 'view_orders_action':
         view_orders(update, context)
-    elif 'upgrade_plan_action_' in query.data:
-        upgrade_plan(update, context)
+    elif 'upgrade_orders_action_' in query.data:
+        upgrade_orders(update, context)
     elif "view-order-id-" in query.data:
         order_id = query.data[14:]
         get_order(update, context, order_id)
@@ -78,14 +73,17 @@ def query_handler(update, context):
     elif "_to_timeslot_tier" in query.data:
         order_id = query.data[8:-17]
         upgrade_to_timeslot(update, context, order_id)
-    elif "_to_14day_tier" in query.data:
-        order_id = query.data[8:-9]
-        upgrade_to_14day(update, context, order_id)
+    elif "_to_14daystd" in query.data:
+        order_id = query.data[8:-12]
+        upgrade_to_14daystd(update, context, order_id)
+    elif "_to_14dayts" in query.data:
+        order_id = query.data[8:-11]
+        upgrade_to_14dayts(update, context, order_id)
     return
 
 
 START_INSTRUCTION = """Welcome to NinjaScheduler! I'm here to help you with your Ninja Van deliveries.\n
-You can view all your orders, upgrade your orders or schedule your deliveries. To proceed, click on View Orders!"""
+You can view all your orders, upgrade your orders or schedule your deliveries. How would you like to proceed?"""
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -131,7 +129,7 @@ def view_orders(update, context):
 
 
 def get_order_keyboard(order_id):
-    options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id_' + order_id)],
+    options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id-' + order_id)],
                [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule_action_' + order_id)]]
     keyboard = InlineKeyboardMarkup(options)
     return keyboard
@@ -218,13 +216,17 @@ def reschedule(update, context):
         # context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
 
-def upgrade_plan(update, context):
+def upgrade_orders(update, context):
     try:
+        users_collection = firestore_db.collection(u'users')
+        doc = users_collection.document(update.callback_query.message.chat.username).get()
+        doc_dict = doc.to_dict()
+        orders = doc_dict['orders']
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text='Which order do you want to upgrade?',
-                                 reply_markup=get_orders_keyboard(update, context, "upgrade"))
+                                 reply_markup=get_orders_keyboard(update, context, orders, "upgrade"))
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -255,9 +257,10 @@ def upgrade_order(update, context, order_id):
 def get_upgrade_keyboard(order_id):
     options = []
     options.append(InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier"))
+    options.append(InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
     options.append(
-        InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
-    options.append(InlineKeyboardButton(text='14 Day Tier', callback_data="upgrade-" + order_id + "_to_14day_tier"))
+        InlineKeyboardButton(text='14 Day Standard Tier', callback_data="upgrade-" + order_id + "_to_14daystd"))
+    options.append(InlineKeyboardButton(text='14 Day Timeslot Tier', callback_data="upgrade-" + order_id + "_to_14dayts"))
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -266,26 +269,27 @@ ALREADY_AT_TIER_MESSAGE = """You are already at this tier. Do /reschedule if you
 ALREADY_AT_HIGHER_TIER_MESSAGE = """You are already at a higher tier. Do /reschedule if you wish to reschedule your package."""
 UPGRADE_EXPRESS_SUCCESS_MESSAGE = """Successfully upgraded to express tier!"""
 UPGRADE_TIMESLOT_SUCCESS_MESSAGE = """Successfully upgraded to timeslot tier!"""
-UPGRADE_FAIL_MESSAGE = """Sorry, unable to retrieve order."""
+UPGRADE_FAIL_MESSAGE = """Sorry, unable to upgrade order."""
+
 
 
 def upgrade_to_express(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
         if "express" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
         elif "timeslot" in del_type:
-            update.message.reply_text(ALREADY_AT_HIGHER_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_HIGHER_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
         else:
-            # stripe API
-            order_id.update({
-                "deliveryType": "express"
-            })
-            update.message.reply_text(UPGRADE_EXPRESS_SUCCESS_MESSAGE)
+            payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!", order_id)
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -296,42 +300,121 @@ def upgrade_to_timeslot(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
+        print(order_dict)
         del_type = order_dict["deliveryType"]
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=del_type)
         if "timeslot" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
         else:
-            # stripe API
-            order_id.update({
-                "deliveryType": "timeslot"
-            })
-            update.message.reply_text(UPGRADE_TIMESLOT_SUCCESS_MESSAGE)
+            payment(update, context, del_type, "timeslot",
+                    "Choose the time slot which you want to receive your parcel (within 7 days)!", order_id)
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
 
-def upgrade_to_14day(update, context, order_id):
+def upgrade_to_14dayts(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
-        if "14day" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+        if "14day-timeslot" in del_type:
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
         else:
-            # stripe API
-            order_id.update({
-                "deliveryType": "14day " + del_type
-            })
-            update.message.reply_text("Successfully upgraded to 14day " + del_type + " tier!")
+            payment(update, context, del_type, "14day-timeslot",
+                    "Not at home in the coming week? Delay your delivery up to 14 days and choose a timeslot!", order_id)
+
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
+def upgrade_to_14daystd(update, context, order_id):
+    try:
+        context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
+        time.sleep(1)
+        order = firestore_db.collection(u'orders').document(order_id).get()
+        order_dict = order.to_dict()
+        del_type = order_dict["deliveryType"]
+        if "14day-standard" in del_type:
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
+        else:
+            payment(update, context, del_type, "14day-standard",
+                    "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
+
+    except Exception as e:
+        print(e)
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=UPGRADE_FAIL_MESSAGE)
+
+
+def payment(update, context, current_type, new_type, type_description, order_id):
+    def get_price():
+        prices = {
+            "standard": 3,
+            "express": 5,
+            "timeslot": 7,
+            "14day-standard": 9,
+            "14day-timeslot": 11
+        }
+        return prices[new_type] - prices[current_type]
+
+    print("Price function", get_price())
+    print("current_type", current_type)
+    print("new_type", new_type)
+    print("dec", type_description)
+    print("oid", order_id)
+    context.bot.send_invoice(chat_id=get_chat_id(update, context),
+                             title=new_type,
+                             description=type_description,
+                             payload="ninja-scheduler/" + new_type + "/" + order_id,
+                             provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
+                             currency="SGD",
+                             prices=[LabeledPrice("Payment for " + new_type + " delivery", get_price() * 100)],
+                             start_parameter="asdhjasdj")
+
+
+# after (optional) shipping, it's the pre-checkout
+def precheckout_callback(update, context):
+    """Answers the PrecheckoutQuery"""
+    query = update.pre_checkout_query
+    print("inside pre checkout function")
+    print(query)
+    # check the payload, is this from your bot?
+    if 'ninja-scheduler' not in query.invoice_payload:
+        # answer False pre_checkout_query
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        print("working here")
+        payload_split = update.pre_checkout_query.invoice_payload.split('/')
+        print(payload_split)
+        update_db_after_payment(payload_split[2], payload_split[1])
+        query.answer(ok=True)
+
+
+def update_db_after_payment(order_id, del_type):
+    firestore_db.collection(u'orders').document(order_id).update({
+        "deliveryType": del_type
+    })
+
+
+# finally, after contacting the payment provider...
+def successful_payment_callback(update, context):
+    """Confirms the successful payment."""
+    # do something after successfully receiving payment?
+    update.message.reply_text("Thank you for your payment!")
 
 
 def error(update, context):
@@ -354,6 +437,9 @@ def main():
     dp.add_handler(CommandHandler("reschedule", reschedule))
     dp.add_handler(CallbackQueryHandler(query_handler))
 
+    dp.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+    dp.add_handler(MessageHandler(Filters.successful_payment, successful_payment_callback))
+
     # log all errors
     dp.add_error_handler(error)
 
@@ -371,7 +457,4 @@ def main():
 
 
 if __name__ == '__main__':
-    first_thread = threading.Thread(target=main)
-    second_thread = threading.Thread(target=app.run)
-    first_thread.start()
-    second_thread.start()
+    main()
