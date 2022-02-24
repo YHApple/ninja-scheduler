@@ -183,6 +183,7 @@ def inline_calendar_handler(update, context):
     elif deliveryType == "14-day" and selected:
         minDate = pickUpDate + datetime.timedelta(days=1)
         maxDate = pickUpDate + datetime.timedelta(days=14)
+    print('tesssstttttt')
 
     if dateInRange(date, minDate, maxDate):
         context.bot.send_message(chat_id=update.callback_query.from_user.id,
