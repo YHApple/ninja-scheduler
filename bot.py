@@ -234,7 +234,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("upgrade", upgradePlan))
     dp.add_handler(CommandHandler("view", viewType))
-    dp.add_handler(CommandHandler("reschedue", reschedule))
+    dp.add_handler(CommandHandler("reschedule", reschedule))
 
     # log all errors
     dp.add_error_handler(error)
