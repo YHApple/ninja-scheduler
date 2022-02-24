@@ -139,12 +139,14 @@ def reschedule(update, context):
         else:
             deliveryType = order_dict['deliveryType']
             pickUpDate = order_dict['pickUpDate'].date()
-            today = datetime.today()
+            today = datetime.now().replace(hour=0, minute=0)
 
             userInput = update.message.text
+            #split date and time
             splitInput = userInput.split(' ')
+            #split day/month/year
             splitDate = splitInput.split('/')
-            rescheduleDate = datetime.datetime(splitDate[2], splitDate[1], splitDate[0])
+            rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
 
             if deliveryType=="standard":
                 minDate = today + datetime.timedelta(days=3)
@@ -158,14 +160,15 @@ def reschedule(update, context):
 
             if "timeslot" in deliveryType:
                 time = userInput[1]
+                rescheduleDateTime.replace(hour=int(time[:2]), minute=int(time[2:]))
     
-            if not dateInRange(rescheduleDate, minDate, maxDate):
+            if not dateInRange(rescheduleDateTime, minDate, maxDate):
                 update.message.reply_text('Date out of range')
             else:
                 numReschedules += 1
                 order.update({ "numReschedules" : numReschedules })
-                order.update({ "deliveryDate" : rescheduleDate })
-                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDate}")
+                order.update({ "deliveryDate" : rescheduleDateTime })
+                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
 def upgradePlan(update, context):
     # Check if command usage is correct
