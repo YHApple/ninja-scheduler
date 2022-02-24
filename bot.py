@@ -1,18 +1,23 @@
 import logging
 import os
 from flask import Flask
-from telegram.ext import Updater, CommandHandler
 import threading
+import json
+from telegram.ext import Updater, CommandHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-import random
+import telebot
 
-# import firebase_admin
-# from firebase_admin import credentials
-# from firebase_admin import firestore
-# # cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-# firebase_admin.initialize_app(cred)
+import firebase_admin
+from firebase_admin import firestore
+from firebase_admin import credentials
 
-# firestore_db = firestore.client()
+cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
+
+
+firebase_admin.initialize_app(cred)
+
+firestore_db = firestore.client()
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -25,12 +30,79 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
 app = Flask(__name__)
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
+
+
+def get_chat_id(update, context):
+    chat_id = -1
+
+    if update.message is not None:
+        # text message
+        chat_id = update.message.chat.id
+    elif update.callback_query is not None:
+        # callback message
+        chat_id = update.callback_query.message.chat.id
+    elif update.poll is not None:
+        # answer in Poll
+        chat_id = context.bot_data[update.poll.id]
+
+    return chat_id
+
+
+# Callback handlers
+@bot.callback_query_handler(func=lambda call: True)
+def iq_callback(query):
+   data = query.data
+   if data == '1':
+       view_plan_callback(query)
+
+
+def view_plan_callback(query):
+   bot.answer_callback_query(query.id)
+   send_view_plan_result(query.message)
+
+
+def send_view_plan_result(message):
+   bot.send_chat_action(message.chat.id, 'typing')
+   bot.send_message(
+       message.chat.id,
+       reply_markup=get_update_keyboard(),
+       parse_mode='HTML'
+   )   
+
+
+def get_update_keyboard():
+    options = []
+    options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
+    options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
+    options.append(InlineKeyboardButton(text='Set Delivery Date', callback_data='3'))
+    options.append(InlineKeyboardButton(text='Reschedule Delivery Date', callback_data='4'))
+    keyboard = InlineKeyboardMarkup([options])
+    return keyboard
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
-    update.message.reply_text("Welcome to Ninja Scheduler! How can I help you with your delivery today?")
+    # doc = firestore_db.collection(u'users').document(u'1').get()
+    # doc_dict = doc.to_dict()
+    # name = doc_dict['name']
+    # update.message.reply_text(name)
 
+    options = []
+    options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
+    options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
+    options.append(InlineKeyboardButton(text='Set Delivery Date', callback_data='3'))
+    options.append(InlineKeyboardButton(text='Reschedule Delivery Date', callback_data='4'))
+    reply_markup = InlineKeyboardMarkup([options])
+
+    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?', reply_markup=reply_markup)
+
+    choice = update.callback_query.data
+    print(choice)
+
+    if choice == '1':
+    # Choice 1: Text
+        update.callback_query.message.edit_text('You have chosen Text')
 
 def error(update, context):
     """Log Errors caused by Updates."""
