@@ -81,22 +81,19 @@ def query_handler(update, context):
         upgrade_to_timeslot(update, context, order_id)
     elif "9-12" in query.data:
         order_id = query.data[11:-19]
-        print(order_id)
-        date = query.data[-16:-6]
-        print(date)
+        date = query.data[-15:-5]
         reschedule_to_time(update, context, date, order_id, 9)
     elif "12-15" in query.data:
         order_id = query.data[11:-20]
-        print(order_id)
-        date = query.data[-16:-6]
+        date = query.data[-15:-5]
         reschedule_to_time(update, context, date, order_id, 12)
     elif "15-18" in query.data:
         order_id = query.data[11:-20]
-        date = query.data[-16:-6]
+        date = query.data[-15:-5]
         reschedule_to_time(update, context, date, order_id, 15)
     elif "_to_18-20" in query.data:
         order_id = query.data[11:-20]
-        date = query.data[-16:-6]
+        date = query.data[-15:-5]
         reschedule_to_time(update, context, date, order_id, 18)
     elif "_to_14daystd" in query.data:
         order_id = query.data[8:-12]
@@ -427,6 +424,8 @@ def upgrade_to_14daystd(update, context, order_id):
 
 def get_time_keyboard(update, context, date, order_id):
     ReplyKeyboardRemove()
+    print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12')
+    print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15')
     options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
                InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15'),
                InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_15-18'),
@@ -434,13 +433,13 @@ def get_time_keyboard(update, context, date, order_id):
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
-def reschedule_to_time(update, context, dateString, order_id, time):
+def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
         date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]))
         firestore_db.collection(u'orders').document(order_id).update({
-            "deliveryDate": date.replace(hour=time)
+            "deliveryDate": date.replace(hour=rescheduleTime)
         })
         if time == 9:
             time_string = " between 9am to 12pm"
