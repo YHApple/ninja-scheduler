@@ -172,7 +172,8 @@ def inline_calendar_handler(update, context):
 
     if numReschedules >= 2:
         context.bot.send_message(chat_id=get_chat_id(update, context),
-                                 text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
+                                 text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
+                                    ,reply_markup=ReplyKeyboardRemove())
     else:
         numReschedules += 1
         if deliveryType == "standard" and selected:
@@ -195,9 +196,9 @@ def inline_calendar_handler(update, context):
             firestore_db.collection(u'orders').document(u'200').update({
                 "numReschedules": str(numReschedules)
             })
-            # firestore_db.collection(u'orders').document(u'200').update({
-            #     { "deliveryDate": rescheduledDateTime.strftime("%d/%m/%Y")}
-            # })
+            firestore_db.collection(u'orders').document(u'200').update({
+                { "deliveryDate": rescheduledDateTime}
+            })
             context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to " + (rescheduledDateTime.strftime("%d/%m/%Y"))
                                      ,reply_markup=ReplyKeyboardRemove())
         else:
