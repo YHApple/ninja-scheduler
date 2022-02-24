@@ -47,7 +47,7 @@ def get_chat_id(update, context):
 
 def get_update_keyboard():
     options = [InlineKeyboardButton(text='View Orders', callback_data='view_orders_action'),
-               InlineKeyboardButton(text='Upgrade Plans', callback_data='upgrade_plan_action_')]
+               InlineKeyboardButton(text='Upgrade Orders', callback_data='upgrade_orders_action_')]
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -60,8 +60,8 @@ def query_handler(update, context):
     # Change your comparisons depending on what you chose as 'callback_data'
     if query.data == 'view_orders_action':
         view_orders(update, context)
-    elif 'upgrade_plan_action_' in query.data:
-        upgrade_plan(update, context)
+    elif 'upgrade_orders_action_' in query.data:
+        upgrade_orders(update, context)
     elif "view-order-id-" in query.data:
         order_id = query.data[14:]
         get_order(update, context, order_id)
@@ -248,13 +248,17 @@ def reschedule(update, context):
                 order.update({ "deliveryDate" : rescheduleDateTime })
                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
-def upgrade_plan(update, context):
+def upgrade_orders(update, context):
     try:
+        users_collection = firestore_db.collection(u'users')
+        doc = users_collection.document(update.callback_query.message.chat.username).get()
+        doc_dict = doc.to_dict()
+        orders = doc_dict['orders']
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text='Which order do you want to upgrade?',
-                                 reply_markup=get_orders_keyboard(update, context, "upgrade"))
+                                 reply_markup=get_orders_keyboard(update, context, orders, "upgrade"))
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
