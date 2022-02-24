@@ -46,7 +46,8 @@ def get_chat_id(update, context):
 
 
 def get_update_keyboard():
-    options = [InlineKeyboardButton(text='View Orders', callback_data='view_orders_action')]
+    options = [InlineKeyboardButton(text='View Orders', callback_data='view_orders_action'),
+               InlineKeyboardButton(text='Upgrade Plans', callback_data='upgrade_plan_action_')]
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
