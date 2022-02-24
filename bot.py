@@ -10,7 +10,7 @@ import firebase_admin
 from firebase_admin import firestore
 
 # cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-cred_dict = {
+cred = {
   "type": "service_account",
   "project_id": "ninja-scheduler-4b901",
   "private_key_id": os.getenv("FIRESTORE_PRIVATE_KEY_ID"),
@@ -22,7 +22,7 @@ cred_dict = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-t77zz%40ninja-scheduler-4b901.iam.gserviceaccount.com"
 }
-cred = json.dumps(cred_dict)
+
 firebase_admin.initialize_app(cred)
 
 firestore_db = firestore.client()
@@ -44,7 +44,7 @@ def start(update, context):
     doc = firestore_db.collection(u'quotes').document(u'1').get()
     doc_dict = doc.to_dict()
     name = doc_dict['name']
-    update.message.reply_text(name)
+    update.message.reply_text()
     update.message.reply_text("Welcome to Ninja Scheduler! How can I help you with your delivery today?")
 
 
