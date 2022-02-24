@@ -383,6 +383,12 @@ def payment(update, context, current_type, new_type, type_description, order_id)
             "14day-timeslot": 9
         }
         return prices[new_type] - prices[current_type]
+
+    print("Price function", get_price())
+    print("current_type", current_type)
+    print("new_type", new_type)
+    print("dec", type_description)
+    print("oid", order_id)
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title=new_type,
                              description=type_description,
