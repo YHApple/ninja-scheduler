@@ -67,7 +67,8 @@ def query_handler(update, context):
     elif "view-order-id-" in query.data:
         order_id = query.data[14:]
         get_order(update, context, order_id)
-    elif "DAY" in query.data:
+    elif "CALENDAR" in query.data:
+        print("calendar query handler")
         inline_calendar_handler(update, context)
     elif "upgrade-order-id-" in query.data:
         order_id = query.data[17:]
