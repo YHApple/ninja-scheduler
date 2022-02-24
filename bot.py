@@ -50,7 +50,7 @@ def start(update, context):
     # doc_dict = doc.to_dict()
     # name = doc_dict['name']
     # update.message.reply_text(name)
-    print("Test")
+
     options = []
     options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
     options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
@@ -61,6 +61,7 @@ def start(update, context):
     context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?', reply_markup=reply_markup)
 
     choice = update.callback_query.data
+    print(choice)
 
     if choice == '1':
     # Choice 1: Text
