@@ -330,10 +330,7 @@ def upgrade_to_timeslot(update, context, order_id):
         time.sleep(1)
         order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
-        print(order_dict)
         del_type = order_dict["deliveryType"]
-        context.bot.send_message(chat_id=get_chat_id(update, context),
-                                 text=del_type)
         if "timeslot" in del_type:
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
@@ -367,6 +364,7 @@ def upgrade_to_14dayts(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
+
 def upgrade_to_14daystd(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
@@ -399,11 +397,6 @@ def payment(update, context, current_type, new_type, type_description, order_id)
         }
         return prices[new_type] - prices[current_type]
 
-    print("Price function", get_price())
-    print("current_type", current_type)
-    print("new_type", new_type)
-    print("dec", type_description)
-    print("oid", order_id)
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title=new_type,
                              description=type_description,
@@ -418,16 +411,12 @@ def payment(update, context, current_type, new_type, type_description, order_id)
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     query = update.pre_checkout_query
-    print("inside pre checkout function")
-    print(query)
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     else:
-        print("working here")
         payload_split = update.pre_checkout_query.invoice_payload.split('/')
-        print(payload_split)
         update_db_after_payment(payload_split[2], payload_split[1])
         query.answer(ok=True)
 
