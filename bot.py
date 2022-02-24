@@ -166,7 +166,7 @@ def inline_calendar_handler(update, context):
     order_dict = order.to_dict()
     deliveryDate = order_dict['deliveryDate'].replace(tzinfo=None)
     deliveryType = order_dict['deliveryType']
-    numReschedules = order_dict['numReschedules']
+    numReschedules = int(order_dict['numReschedules'])
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
@@ -189,8 +189,8 @@ def inline_calendar_handler(update, context):
             # context.bot.send_message(chat_id=update.callback_query.from_user.id,
             #                      text="Date set to " + (rescheduledDateTime.strftime("%d/%m/%Y")),
             #                      reply_markup=ReplyKeyboardRemove())
-            order.update({"numReschedules": numReschedules})
-            order.update({ "deliveryDate" : rescheduledDateTime })
+            order.update({"numReschedules": str(numReschedules)})
+            order.update({ "deliveryDate": rescheduledDateTime})
             context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduledDateTime}"
                                      ,reply_markup=ReplyKeyboardRemove())
         else:
