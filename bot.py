@@ -336,12 +336,11 @@ def upgrade_to_timeslot(update, context, order_id):
             })
             payment(update, context, del_type, "timeslot",
                     "Choose the time slot which you want to receive your parcel (within 7 days)!", order_id)
-
-
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
 
 def upgrade_to_14day(update, context, order_id):
     try:
@@ -354,6 +353,9 @@ def upgrade_to_14day(update, context, order_id):
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
+        elif del_type == "express":
+            payment(update, context, del_type, "14day-timeslot",
+                    "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
         else:
             payment(update, context, del_type, "14day-" + del_type,
                     "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
