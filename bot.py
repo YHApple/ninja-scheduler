@@ -218,16 +218,14 @@ def reschedule_order(update, context, order_id):
                                         text=f"Please select a time slot",
                                         reply_markup=get_time_keyboard(update, context, rescheduledDateTime, order_id))
             else:
-                numReschedules = int(firestore_db.collection(u'orders').document(order_id).to_dict()["numReschedules"]) - 1
+                numReschedules -= 1
                 firestore_db.collection(u'orders').document(order_id).update({
                     "deliveryDate": rescheduledDateTime,
                     "numReschedules" : str(numReschedules)
                 })
                 context.bot.send_message(chat_id=get_chat_id(update, context),
-                                         text=f"Your delivery has been rescheduled to " + (
-                                    date.strftime("%d/%m/%Y")),
+                                         text=f"Your delivery has been rescheduled to " + rescheduledDateTime.strftime("%d/%m/%Y"),
                                          reply_markup=get_update_keyboard())
-
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
                                  text="Date is out of range",
