@@ -44,7 +44,6 @@ def get_chat_id(update, context):
 
     return chat_id
 
-
 def get_update_keyboard():
     options = [InlineKeyboardButton(text='View Orders', callback_data='view_orders_action'),
                InlineKeyboardButton(text='Upgrade Orders', callback_data='upgrade_orders_action_')]
@@ -65,6 +64,9 @@ def query_handler(update, context):
     elif "view-order-id-" in query.data:
         order_id = query.data[14:]
         get_order(update, context, order_id)
+    elif "reschedule-order-id-" in query.data:
+        order_id = query.data[20:]
+        reschedule_order(update, context, order_id)
     elif "upgrade-order-id-" in query.data:
         order_id = query.data[17:]
         upgrade_order(update, context, order_id)
@@ -77,6 +79,18 @@ def query_handler(update, context):
     elif "_to_14day_tier" in query.data:
         order_id = query.data[8:-14]
         upgrade_to_14day(update, context, order_id)
+    elif "_to_9-12" in query.data:
+        order_id = query.data[11:-8]
+        reschedule_to_time(update, context, order_id, 9)
+    elif "_to_12-15" in query.data:
+        order_id = query.data[11:-9]
+        reschedule_to_time(update, context, order_id, 12)
+    elif "_to_15-18" in query.data:
+        order_id = query.data[11:-9]
+        reschedule_to_time(update, context, order_id, 15)
+    elif "_to_18-20" in query.data:
+        order_id = query.data[11:-9]
+        reschedule_to_time(update, context, order_id, 18)
     return
 
 
@@ -369,11 +383,34 @@ def upgrade_to_14day(update, context, order_id):
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text="Successfully upgraded to 14day " + del_type + " tier!",
                                      reply_markup=get_update_keyboard())
+
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
+def get_time_keyboard(update, context, date, order_id):
+    options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + '_to_9-12'),
+               InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + '_to_12-15'),
+               InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + '_to_15-18'),
+               InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + '_to_18-22')]
+    keyboard = InlineKeyboardMarkup([options])
+    return keyboard
+
+def reschedule_to_time(update, context, date, order_id, time):
+    try:
+        context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
+        time.sleep(1)
+        firestore_db.collection(u'orders').document(order_id).update({
+            "deliveryDate": date.replace(hour=time)
+        })
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                text="Successfully upgraded to 14day " + del_type + " tier!",
+                                reply_markup=get_update_keyboard())
+    except Exception as e:
+        print(e)
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=UPGRADE_FAIL_MESSAGE)
 
 def error(update, context):
     """Log Errors caused by Updates."""
