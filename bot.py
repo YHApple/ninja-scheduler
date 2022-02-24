@@ -191,9 +191,11 @@ def reschedule_order(update, context, order_id):
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if numReschedules <= 0:
+        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+        keyboard = InlineKeyboardMarkup([options])
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
-                                    ,reply_markup=ReplyKeyboardRemove())
+                                    ,reply_markup=keyboard)
     else:
         if deliveryType == "standard" and selected:
             minDate = today + datetime.timedelta(days=3)
