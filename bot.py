@@ -2,7 +2,9 @@ import logging
 import os
 import datetime
 from datetime import date, timedelta
-
+from flask import Flask
+import threading
+import json
 from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 # from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
@@ -25,6 +27,7 @@ PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
+app = Flask(__name__)
 
 def get_chat_id(update, context):
     chat_id = -1
@@ -231,4 +234,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    first_thread = threading.Thread(target=app.run)
+    second_thread = threading.Thread(target=main)
+    first_thread.start()
+    second_thread.start()
