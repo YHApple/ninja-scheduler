@@ -151,7 +151,7 @@ def view_orders(update, context):
 
 def get_order_keyboard(order_id):
     options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id-' + order_id)],
-               [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule-orders-action' + order_id)]]
+               [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule_orders_action' + order_id)]]
     keyboard = InlineKeyboardMarkup(options)
     return keyboard
 
