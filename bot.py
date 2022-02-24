@@ -81,7 +81,7 @@ def query_handler(update, context):
 
 
 START_INSTRUCTION = """Welcome to NinjaScheduler! I'm here to help you with your Ninja Van deliveries.\n
-You can view all your orders, upgrade your orders or schedule your deliveries. To proceed, click on View Orders!"""
+You can view all your orders, upgrade your orders or schedule your deliveries. How would you like to proceed?"""
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -93,12 +93,12 @@ def start(update, context):
     # input from text message
 
 def convert_order_to_button(order_id, action):
+    print(action + "-order-id-" + str(order_id))
     return InlineKeyboardButton(text=str(order_id), callback_data= action + "-order-id-" + str(order_id))
 
 
 def get_orders_keyboard(update, context, orders, action):
     options = list(map(convert_order_to_button, orders, (action,) * len(orders)))
-    print(options)
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -126,7 +126,7 @@ def view_orders(update, context):
 
 
 def get_order_keyboard(order_id):
-    options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id_' + order_id)],
+    options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id-' + order_id)],
                [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule_action_' + order_id)]]
     keyboard = InlineKeyboardMarkup(options)
     return keyboard
