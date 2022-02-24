@@ -355,7 +355,7 @@ def upgrade_to_14day(update, context, order_id):
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            payment(update, context, "14day-" + del_type, "14day-" + del_type,
+            payment(update, context, del_type, "14day-" + del_type,
                     "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
 
     except Exception as e:
