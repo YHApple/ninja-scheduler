@@ -312,9 +312,6 @@ def upgrade_to_express(update, context, order_id):
                                      reply_markup=get_update_keyboard())
         else:
             payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!", order_id)
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text=UPGRADE_EXPRESS_SUCCESS_MESSAGE,
-                                     reply_markup=get_update_keyboard())
 
 
     except Exception as e:
@@ -339,9 +336,6 @@ def upgrade_to_timeslot(update, context, order_id):
             })
             payment(update, context, del_type, "timeslot",
                     "Choose the time slot which you want to receive your parcel (within 7 days)!", order_id)
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text=UPGRADE_TIMESLOT_SUCCESS_MESSAGE,
-                                     reply_markup=get_update_keyboard())
 
 
     except Exception as e:
@@ -363,9 +357,6 @@ def upgrade_to_14day(update, context, order_id):
         else:
             payment(update, context, "14day" + del_type, "14day" + del_type,
                     "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text="Successfully upgraded to 14day " + del_type + " tier!",
-                                     reply_markup=get_update_keyboard())
 
     except Exception as e:
         print(e)
@@ -403,12 +394,16 @@ def payment(update, context, current_type, new_type, type_description, order_id)
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     query = update.pre_checkout_query
+    print("inside pre checkout function")
+    print(query)
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     else:
+        print("working here")
         payload_split = update.pre_checkout_query.split('/')
+        print(payload_split)
         update_db_after_payment(payload_split[2], payload_split[1])
         query.answer(ok=True)
 
