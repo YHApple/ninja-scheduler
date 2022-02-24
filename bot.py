@@ -10,7 +10,7 @@ import firebase_admin
 from firebase_admin import firestore
 
 # cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-cred = {
+cred_dict = {
   "type": "service_account",
   "project_id": "ninja-scheduler-4b901",
   "private_key_id": os.getenv("FIRESTORE_PRIVATE_KEY_ID"),
@@ -22,6 +22,8 @@ cred = {
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-t77zz%40ninja-scheduler-4b901.iam.gserviceaccount.com"
 }
+
+cred = firebase_admin.credentials.Certificate(cred_dict)
 
 firebase_admin.initialize_app(cred)
 
