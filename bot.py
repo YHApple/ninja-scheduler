@@ -75,7 +75,7 @@ def query_handler(update, context):
         order_id = query.data[8:-17]
         upgrade_to_timeslot(update, context, order_id)
     elif "_to_14day_tier" in query.data:
-        order_id = query.data[8:-9]
+        order_id = query.data[8:-14]
         upgrade_to_14day(update, context, order_id)
     return
 
