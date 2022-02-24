@@ -1,6 +1,7 @@
 import logging
 import os
 import datetime
+from datetime import date, timedelta
 
 from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -73,60 +74,79 @@ def viewType(update, context):
         deliveryType = doc_dict['deliveryType']
         context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
     
-# def getDate(date):
-#     splitDate = date.split(" at ")
-#     d = datetime.strptime(splitDate[0], '%d %B %Y')
-#     return d
+def getDate(date):
+    splitDate = date.split(" at ")
+    d = datetime.strptime(splitDate[0], '%d %B %Y')
+    return d
 
-# def setDate(update, context):
-#     # update the delivery date on firestore
-#     doc = firestore_db.collection(u'users').document(u'1').get()
-#     doc_dict = doc.to_dict()
-#     deliveryDate = doc_dict['deliveryDate']
-#     deliveryType = doc_dict['deliveryType']
-#     context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
-#     deliveryDateConv = getDate(deliveryDate)
-#     if deliveryType == 'standard':
-#         # restrict date range to 3-7
-#         min_date = deliveryDateConv + datetime.timedelta(days=3)
-#         max_date = deliveryDateConv + datetime.timedelta(days=7)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#     elif deliveryType == 'express':
-#         # restrict date range to 7
-#         min_date = deliveryDateConv + datetime.timedelta(days=1)
-#         max_date = deliveryDateConv + datetime.timedelta(days=7)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#     else:
-#         # restrict date range to 3-14
-#         min_date = deliveryDateConv + datetime.timedelta(days=3)
-#         max_date = deliveryDateConv + datetime.timedelta(days=14)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+def dateInRange(dateToCheck, minDate, maxDate):
+    return minDate >= dateToCheck and dateToCheck <= maxDate
 
-# def reschedule(update, context):
-#     # update the deliveryDate and update the numReschedules
-#     doc = firestore_db.collection(u'orders').document(u'1').get()
-#     doc_dict = doc.to_dict()
-#     calendar, step = DetailedTelegramCalendar().build()
-#     #check if rescheduling is allowed
-#     numReschedules = doc_dict['numReschedules']
-#     pickUpDate = doc_dict['pickUpDate']
-#     d = getDate(pickUpDate)
-#     if numReschedules > 2:
-#         context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
-#     #check that pickup date is within 7 days
-    
-    
+def setDate(update, context):
+    # update the delivery date on firestore
+    doc = firestore_db.collection(u'users').document(u'1').get()
+    doc_dict = doc.to_dict()
+    deliveryDate = doc_dict['deliveryDate']
+    deliveryType = doc_dict['deliveryType']
+    # context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
+    if update.message.text.strip() == '/setdate': 
+        update.message.reply_text("Please specify the date to reschedule to! \n Usage:/setdate [dd-mm-yy] \n eg. /upgrade 02/24/22")
+    else:
+        deliveryDateConv = getDate(deliveryDate)
+        command = update.message.text.split(" ")
+        inputDate = datetime.strptime(command[0], '%d/%m/%y')
+        if deliveryType == 'standard':
+            # restrict date range to 3-7
+            minDate = deliveryDateConv + datetime.timedelta(days=3)
+            maxDate = deliveryDateConv + datetime.timedelta(days=7)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+        elif deliveryType == 'express':
+            # restrict date range to 7
+            minDate = deliveryDateConv + datetime.timedelta(days=1)
+            maxDate = deliveryDateConv + datetime.timedelta(days=7)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+        else:
+            # restrict date range to 3-14
+            minDate = deliveryDateConv + datetime.timedelta(days=3)
+            maxDate = deliveryDateConv + datetime.timedelta(days=14)
+            if not dateInRange(inputDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                doc.update({ "deliveryDate" : inputDate })
+            # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
 
-#     numReschedules += 1
-#     doc.update({ "numReschedules" : numReschedules })
-#     context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
-    
-def getTime(update, context):
-    order_ref = firestore_db.collection(u'orders').document(u'100').get()
-    order_dict = order_ref.to_dict()
-    current_type = order_dict["deliveryDate"]
-    update.message.reply_text(current_type)
-
+def reschedule(update, context):
+    if update.message.text.strip() == '/reschedule': 
+        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg.")
+    else:
+        # update the deliveryDate and update the numReschedules
+        order = firestore_db.collection(u'orders').document(u'1').get()
+        order_dict = order.to_dict()
+        #check if rescheduling is allowed
+        numReschedules = order_dict['numReschedules']
+        if numReschedules > 2:
+            context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
+        else:
+            pickUpDate = order_dict['pickUpDate'].date()
+            deliveryType = order_dict['deliveryType']
+            userInput = update.message.text
+            splitInput = userInput.split('/')
+            rescheduleDate = datetime.datetime(splitInput[2], splitInput[1], splitInput[0])
+            if 0 < rescheduleDate - pickUpDate <= 7:
+                context.bot.send_message(chat_id=get_chat_id(update, context), text="Your reschedule date must be within 7 days!")
+            else:
+                numReschedules += 1
+                order.update({ "numReschedules" : numReschedules })
+                order.update({ "deliveryDate" : rescheduleDate })
+                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDate}")
 
 def upgradePlan(update, context):
     # Check if command usage is correct
@@ -193,7 +213,6 @@ def main():
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("upgrade", upgradePlan))
     dp.add_handler(CommandHandler("view", viewType))
-    dp.add_handler(CommandHandler("time", getTime))
 
     # log all errors
     dp.add_error_handler(error)
