@@ -93,7 +93,6 @@ def start(update, context):
     # input from text message
 
 def convert_order_to_button(order_id, action):
-    print(action + "-order-id-" + str(order_id))
     return InlineKeyboardButton(text=str(order_id), callback_data= action + "-order-id-" + str(order_id))
 
 
