@@ -280,6 +280,7 @@ def upgrade_order(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Sorry, unable to retrieve order.")
 
+
 def get_upgrade_keyboard(order_id):
     options = []
     options.append(InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier"))
@@ -292,7 +293,8 @@ ALREADY_AT_TIER_MESSAGE = """You are already at this tier. Do /reschedule if you
 ALREADY_AT_HIGHER_TIER_MESSAGE = """You are already at a higher tier. Do /reschedule if you wish to reschedule your package."""
 UPGRADE_EXPRESS_SUCCESS_MESSAGE = """Successfully upgraded to express tier!"""
 UPGRADE_TIMESLOT_SUCCESS_MESSAGE = """Successfully upgraded to timeslot tier!"""
-UPGRADE_FAIL_MESSAGE = """Sorry, unable to retrieve order."""
+UPGRADE_FAIL_MESSAGE = """Sorry, unable to upgrade order."""
+
 
 def upgrade_to_express(update, context, order_id):
     try:
@@ -324,13 +326,17 @@ def upgrade_to_express(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
+
 def upgrade_to_timeslot(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
+        print(order_dict)
         del_type = order_dict["deliveryType"]
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=del_type)
         if "timeslot" in del_type:
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
