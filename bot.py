@@ -45,6 +45,7 @@ def get_update_keyboard():
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
+
 # Handles the callback functions
 def query_handler(update, context):
     # Here, we'll have access to the user's answer
@@ -68,9 +69,12 @@ def query_handler(update, context):
     elif "_to_timeslot_tier" in query.data:
         order_id = query.data[8:-17]
         upgrade_to_timeslot(update, context, order_id)
-    elif "_to_14day_tier" in query.data:
-        order_id = query.data[8:-14]
-        upgrade_to_14day(update, context, order_id)
+    elif "_to_14daystd" in query.data:
+        order_id = query.data[8:-12]
+        upgrade_to_14daystd(update, context, order_id)
+    elif "_to_14dayts" in query.data:
+        order_id = query.data[8:-11]
+        upgrade_to_14dayts(update, context, order_id)
     return
 
 
@@ -284,7 +288,9 @@ def get_upgrade_keyboard(order_id):
     options = []
     options.append(InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier"))
     options.append(InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
-    options.append(InlineKeyboardButton(text='14 Day Tier', callback_data="upgrade-" + order_id + "_to_14day_tier"))
+    options.append(
+        InlineKeyboardButton(text='14 Day Standard Tier', callback_data="upgrade-" + order_id + "_to_14daystd"))
+    options.append(InlineKeyboardButton(text='14 Day Timeslot Tier', callback_data="upgrade-" + order_id + "_to_14dayts"))
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -299,7 +305,7 @@ def upgrade_to_express(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
         if "express" in del_type:
@@ -312,8 +318,6 @@ def upgrade_to_express(update, context, order_id):
                                      reply_markup=get_update_keyboard())
         else:
             payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!", order_id)
-
-
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -343,22 +347,39 @@ def upgrade_to_timeslot(update, context, order_id):
                                  text=UPGRADE_FAIL_MESSAGE)
 
 
-def upgrade_to_14day(update, context, order_id):
+def upgrade_to_14dayts(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
-        if "14day" in del_type:
+        if "14day-timeslot" in del_type:
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
-        elif del_type == "express":
-            payment(update, context, del_type, "14day-timeslot",
-                    "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
         else:
-            payment(update, context, del_type, "14day-" + del_type,
+            payment(update, context, del_type, "14day-timeslot",
+                    "Not at home in the coming week? Delay your delivery up to 14 days and choose a timeslot!", order_id)
+
+    except Exception as e:
+        print(e)
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=UPGRADE_FAIL_MESSAGE)
+
+def upgrade_to_14daystd(update, context, order_id):
+    try:
+        context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
+        time.sleep(1)
+        order = firestore_db.collection(u'orders').document(order_id).get()
+        order_dict = order.to_dict()
+        del_type = order_dict["deliveryType"]
+        if "14day-standard" in del_type:
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard())
+        else:
+            payment(update, context, del_type, "14day-standard",
                     "Not at home in the coming week? Delay your delivery up to 14 days!", order_id)
 
     except Exception as e:
