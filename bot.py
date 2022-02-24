@@ -174,7 +174,7 @@ def inline_calendar_handler(update, context):
     pickUpDate = date
     today = date
     print(selected)
-    print('date: ' + date)
+    print('DATTTEEEEEEE: ' + date)
 
     if deliveryType == "standard" and selected:
         minDate = today + datetime.timedelta(days=3)
