@@ -229,7 +229,6 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("upgrade", upgradePlan))
     dp.add_handler(CommandHandler("view", viewType))
     dp.add_handler(CommandHandler("reschedue", reschedule))
