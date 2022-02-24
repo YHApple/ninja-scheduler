@@ -1,7 +1,6 @@
 import logging
 import os
 import datetime
-from datetime import date, timedelta
 from flask import Flask
 import threading
 import json
@@ -138,13 +137,24 @@ def reschedule(update, context):
         if numReschedules > 2:
             context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
         else:
-            pickUpDate = order_dict['pickUpDate'].date()
             deliveryType = order_dict['deliveryType']
+            pickUpDate = order_dict['pickUpDate'].date()
+            today = datetime.today()
             userInput = update.message.text
             splitInput = userInput.split('/')
             rescheduleDate = datetime.datetime(splitInput[2], splitInput[1], splitInput[0])
-            if 0 < rescheduleDate - pickUpDate <= 7:
-                context.bot.send_message(chat_id=get_chat_id(update, context), text="Your reschedule date must be within 7 days!")
+            if deliveryType=="standard":
+                minDate = today + datetime.timedelta(days=3)
+                maxDate = pickUpDate + datetime.timedelta(days=7) 
+            elif deliveryType=="express":
+                minDate = today + datetime.timedelta(days=1)
+                maxDate = pickUpDate + datetime.timedelta(days=7)
+            else:
+                minDate = today + datetime.timedelta(days=3)
+                maxDate = pickUpDate + datetime.timedelta(days=14)
+    
+            if not dateInRange(rescheduleDate, minDate, maxDate):
+                update.message.reply_text('Date out of range')
             else:
                 numReschedules += 1
                 order.update({ "numReschedules" : numReschedules })
@@ -216,6 +226,7 @@ def main():
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("upgrade", upgradePlan))
     dp.add_handler(CommandHandler("view", viewType))
+    dp.add_handler(CommandHandler("reschedue", reschedule))
 
     # log all errors
     dp.add_error_handler(error)
