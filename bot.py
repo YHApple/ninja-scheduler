@@ -6,8 +6,6 @@ from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 # from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
-import telebot
-
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
@@ -58,7 +56,7 @@ def start(update, context):
     # doc_dict = doc.to_dict()
     # name = doc_dict['name']
     # update.message.reply_text(name)
-    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?')
+    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?', reply_markup=get_update_keyboard())
     # input from text message
     
 
@@ -70,7 +68,7 @@ def viewType(update, context):
         # Obtain arguments of the command
         command = update.message.text.split(" ")
         order_id = command[1]    
-        doc = firestore_db.collection(u'orders').document(order_id).get()
+        doc = firestore_db.collection(u'orders').document(u'100').get()
         doc_dict = doc.to_dict()
         deliveryType = doc_dict['deliveryType']
         context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
@@ -111,15 +109,17 @@ def viewType(update, context):
 #     calendar, step = DetailedTelegramCalendar().build()
 #     #check if rescheduling is allowed
 #     numReschedules = doc_dict['numReschedules']
+#     pickUpDate = doc_dict['pickUpDate']
+#     d = getDate(pickUpDate)
 #     if numReschedules > 2:
 #         context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
 #     #check that pickup date is within 7 days
-#     pickUpDate = doc_dict['pickUpDate']
-#     d = getDate(pickUpDate)
+#     
+    
 
-    #numReschedules += 1
-    #firestore_db.collection(u'orders').document(u'1')
-    #context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
+#     numReschedules += 1
+#     doc.update({ "numReschedules" : numReschedules })
+#     context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
     
 
 def upgradePlan(update, context):
