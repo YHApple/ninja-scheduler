@@ -46,6 +46,7 @@ def get_chat_id(update, context):
 
     return chat_id
 
+
 # Callback handlers
 @bot.callback_query_handler(func=lambda call: True)
 def iq_callback(query):
@@ -53,9 +54,11 @@ def iq_callback(query):
    if data == '1':
        view_plan_callback(query)
 
+
 def view_plan_callback(query):
    bot.answer_callback_query(query.id)
    send_view_plan_result(query.message)
+
 
 def send_view_plan_result(message):
    bot.send_chat_action(message.chat.id, 'typing')
@@ -64,6 +67,7 @@ def send_view_plan_result(message):
        reply_markup=get_update_keyboard(),
        parse_mode='HTML'
    )   
+
 
 def get_update_keyboard():
     options = []
