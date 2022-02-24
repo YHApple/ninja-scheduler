@@ -140,10 +140,12 @@ def reschedule(update, context):
             deliveryType = order_dict['deliveryType']
             pickUpDate = order_dict['pickUpDate'].date()
             today = datetime.now().replace(hour=0, minute=0)
+            print(today)
 
             userInput = update.message.text
             #split date and time
             splitInput = userInput.split(' ')
+            print(splitInput)
             #split day/month/year
             splitDate = splitInput.split('/')
             rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
