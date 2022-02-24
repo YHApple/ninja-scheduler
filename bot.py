@@ -4,7 +4,7 @@ import datetime
 
 from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-# from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
+from telegram_bot_calendar import DetailedTelegramCalendar, LSTEP
 
 import firebase_admin
 from firebase_admin import firestore
@@ -56,7 +56,7 @@ def start(update, context):
     # doc_dict = doc.to_dict()
     # name = doc_dict['name']
     # update.message.reply_text(name)
-    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?', reply_markup=get_update_keyboard())
+    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?'.)
     # input from text message
     
 
@@ -68,59 +68,65 @@ def viewType(update, context):
         # Obtain arguments of the command
         command = update.message.text.split(" ")
         order_id = command[1]    
-        doc = firestore_db.collection(u'orders').document(u'100').get()
+        doc = firestore_db.collection(u'orders').document(order_id).get()
         doc_dict = doc.to_dict()
         deliveryType = doc_dict['deliveryType']
         context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
     
-# def getDate(date):
-#     splitDate = date.split(" at ")
-#     d = datetime.strptime(splitDate[0], '%d %B %Y')
-#     return d
+def getDate(date):
+    splitDate = date.split(" at ")
+    d = datetime.strptime(splitDate[0], '%d %B %Y')
+    return d
 
-# def setDate(update, context):
-#     # update the delivery date on firestore
-#     doc = firestore_db.collection(u'users').document(u'1').get()
-#     doc_dict = doc.to_dict()
-#     deliveryDate = doc_dict['deliveryDate']
-#     deliveryType = doc_dict['deliveryType']
-#     context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
-#     deliveryDateConv = getDate(deliveryDate)
-#     if deliveryType == 'standard':
-#         # restrict date range to 3-7
-#         min_date = deliveryDateConv + datetime.timedelta(days=3)
-#         max_date = deliveryDateConv + datetime.timedelta(days=7)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#     elif deliveryType == 'express':
-#         # restrict date range to 7
-#         min_date = deliveryDateConv + datetime.timedelta(days=1)
-#         max_date = deliveryDateConv + datetime.timedelta(days=7)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
-#     else:
-#         # restrict date range to 3-14
-#         min_date = deliveryDateConv + datetime.timedelta(days=3)
-#         max_date = deliveryDateConv + datetime.timedelta(days=14)
-#         calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+def setDate(update, context):
+    # update the delivery date on firestore
+    doc = firestore_db.collection(u'users').document(u'1').get()
+    doc_dict = doc.to_dict()
+    deliveryDate = doc_dict['deliveryDate']
+    deliveryType = doc_dict['deliveryType']
+    context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryDate)
+    deliveryDateConv = getDate(deliveryDate)
+    if deliveryType == 'standard':
+        # restrict date range to 3-7
+        min_date = deliveryDateConv + datetime.timedelta(days=3)
+        max_date = deliveryDateConv + datetime.timedelta(days=7)
+        calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+    elif deliveryType == 'express':
+        # restrict date range to 7
+        min_date = deliveryDateConv + datetime.timedelta(days=1)
+        max_date = deliveryDateConv + datetime.timedelta(days=7)
+        calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
+    else:
+        # restrict date range to 3-14
+        min_date = deliveryDateConv + datetime.timedelta(days=3)
+        max_date = deliveryDateConv + datetime.timedelta(days=14)
+        calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
 
-# def reschedule(update, context):
-#     # update the deliveryDate and update the numReschedules
-#     doc = firestore_db.collection(u'orders').document(u'1').get()
-#     doc_dict = doc.to_dict()
-#     calendar, step = DetailedTelegramCalendar().build()
-#     #check if rescheduling is allowed
-#     numReschedules = doc_dict['numReschedules']
-#     pickUpDate = doc_dict['pickUpDate']
-#     d = getDate(pickUpDate)
-#     if numReschedules > 2:
-#         context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
-#     #check that pickup date is within 7 days
-#     
+def reschedule(update, context):
+    # update the deliveryDate and update the numReschedules
+    doc = firestore_db.collection(u'orders').document(u'1').get()
+    doc_dict = doc.to_dict()
+    calendar, step = DetailedTelegramCalendar().build()
+    #check if rescheduling is allowed
+    numReschedules = doc_dict['numReschedules']
+    pickUpDate = doc_dict['pickUpDate']
+    d = getDate(pickUpDate)
+    if numReschedules > 2:
+        context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
+    #check that pickup date is within 7 days
+    
     
 
-#     numReschedules += 1
-#     doc.update({ "numReschedules" : numReschedules })
-#     context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
+    numReschedules += 1
+    doc.update({ "numReschedules" : numReschedules })
+    context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
     
+def getTime(update, context):
+    order_ref = firestore_db.collection(u'orders').document(u'100').get()
+    order_dict = order_ref.to_dict()
+    current_type = order_dict["deliveryDate"]
+    update.message.reply_text(current_type)
+
 
 def upgradePlan(update, context):
     # Check if command usage is correct
@@ -143,7 +149,6 @@ def upgradePlan(update, context):
             upgrade_from_express(update, delivery_type, order_ref)
         else:
             update.message.reply_text("You are already at the highest delivery tier! Do /reschedule if you wish to reschedule your package.")
-
 
 def upgrade_from_standard(update, del_type, order_ref):
     if del_type == "standard":
@@ -188,6 +193,7 @@ def main():
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("upgrade", upgradePlan))
     dp.add_handler(CommandHandler("view", viewType))
+    dp.add_handler(CommandHandler("time", getTime))
 
     # log all errors
     dp.add_error_handler(error)
