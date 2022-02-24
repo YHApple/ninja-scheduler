@@ -307,9 +307,13 @@ def upgrade_to_express(update, context, order_id):
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
         if "express" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard(order_id))
         elif "timeslot" in del_type:
-            update.message.reply_text(ALREADY_AT_HIGHER_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_HIGHER_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard(order_id))
         else:
             # stripe API
             firestore_db.collection(u'orders').document(order_id).update({
@@ -331,7 +335,9 @@ def upgrade_to_timeslot(update, context, order_id):
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
         if "timeslot" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard(order_id))
         else:
             # stripe API
             firestore_db.collection(u'orders').document(order_id).update({
@@ -353,7 +359,9 @@ def upgrade_to_14day(update, context, order_id):
         order_dict = order.to_dict()
         del_type = order_dict["deliveryType"]
         if "14day" in del_type:
-            update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text=ALREADY_AT_TIER_MESSAGE,
+                                     reply_markup=get_update_keyboard(order_id))
         else:
             # stripe API
             firestore_db.collection(u'orders').document(order_id).update({
