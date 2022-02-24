@@ -54,6 +54,7 @@ def separate_callback_data(data):
     return data.split(";")
 
 def process_calendar_selection(update,context):
+    print('process')
     """
     Process the callback_query. This method generates a new calendar if forward or
     backward is pressed. This method should be called inside a CallbackQueryHandler.

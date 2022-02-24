@@ -164,12 +164,13 @@ def set_date(update, context):
     update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
 
 def inline_calendar_handler(update, context):
+    print('test test')
     selected, date = telegramcalendar.process_calendar_selection(update, context)
     doc = firestore_db.collection(u'users').document(u'1').get()
     doc_dict = doc.to_dict()
-    deliveryDate = doc_dict['deliveryDate'].date()
+    deliveryDate = doc_dict['deliveryDate']
     deliveryType = doc_dict['deliveryType']
-    pickUpDate = doc_dict['pickUpDate'].date()
+    pickUpDate = doc_dict['pickUpDate']
     today = datetime.now().replace(hour=0, minute=0)
     print(selected)
     print('date: ' + date)
