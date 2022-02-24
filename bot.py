@@ -426,11 +426,13 @@ def get_time_keyboard(update, context, date, order_id):
     ReplyKeyboardRemove()
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12')
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15')
-    options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
+    options = [
+                InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
                InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15'),
                InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_15-18'),
                InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] +'_18-22')]
-    keyboard = InlineKeyboardMarkup([options])
+    back = InlineKeyboardButton(text='←', callback_data= 'reschedule_orders_action' + order_id),
+    keyboard = InlineKeyboardMarkup([back, options])
     return keyboard
 
 def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
