@@ -172,7 +172,7 @@ def inline_calendar_handler(update, context):
     deliveryDate = doc_dict['deliveryDate']
     deliveryType = doc_dict['deliveryType']
     pickUpDate = doc_dict['pickUpDate']
-    today = datetime.now().replace(hour=0, minute=0)
+    today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if deliveryType == "standard" and selected:
         minDate = today + datetime.timedelta(days=3)
