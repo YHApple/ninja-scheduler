@@ -74,7 +74,7 @@ def process_calendar_selection(update,context):
             chat_id=query.message.chat_id,
             message_id=query.message.message_id
             )
-        ret_data = True,datetime.datetime(int(year),int(month),int(day))
+        ret_data = datetime.datetime(int(year),int(month),int(day))
     elif action == "PREV-MONTH":
         pre = curr - datetime.timedelta(days=1)
         context.bot.edit_message_text(text=query.message.text,
