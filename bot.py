@@ -98,6 +98,7 @@ def convert_order_to_button(order_id, action):
 
 def get_orders_keyboard(update, context, orders, action):
     options = list(map(convert_order_to_button, orders, (action,) * len(orders)))
+    print(options)
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
@@ -311,7 +312,7 @@ def upgrade_to_express(update, context, order_id):
             update.message.reply_text(ALREADY_AT_HIGHER_TIER_MESSAGE)
         else:
             # stripe API
-            order_id.update({
+            order.update({
                 "deliveryType": "express"
             })
             update.message.reply_text(UPGRADE_EXPRESS_SUCCESS_MESSAGE)
@@ -331,7 +332,7 @@ def upgrade_to_timeslot(update, context, order_id):
             update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
         else:
             # stripe API
-            order_id.update({
+            order.update({
                 "deliveryType": "timeslot"
             })
             update.message.reply_text(UPGRADE_TIMESLOT_SUCCESS_MESSAGE)
@@ -351,7 +352,7 @@ def upgrade_to_14day(update, context, order_id):
             update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
         else:
             # stripe API
-            order_id.update({
+            order.update({
                 "deliveryType": "14day " + del_type
             })
             update.message.reply_text("Successfully upgraded to 14day " + del_type + " tier!")
