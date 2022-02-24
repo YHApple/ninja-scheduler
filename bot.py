@@ -5,13 +5,14 @@ import json
 from telegram.ext import Updater, CommandHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-import random
+import telebot
 
 import firebase_admin
 from firebase_admin import firestore
 from firebase_admin import credentials
 
 cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
+
 
 firebase_admin.initialize_app(cred)
 
@@ -26,6 +27,8 @@ logger = logging.getLogger(__name__)
 PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
+
+bot = telebot.TeleBot(TOKEN, parse_mode=None)
 
 
 def get_chat_id(update, context):
@@ -42,6 +45,34 @@ def get_chat_id(update, context):
         chat_id = context.bot_data[update.poll.id]
 
     return chat_id
+
+# Callback handlers
+@bot.callback_query_handler(func=lambda call: True)
+def iq_callback(query):
+   data = query.data
+   if data == '1':
+       view_plan_callback(query)
+
+def view_plan_callback(query):
+   bot.answer_callback_query(query.id)
+   send_view_plan_result(query.message)
+
+def send_view_plan_result(message):
+   bot.send_chat_action(message.chat.id, 'typing')
+   bot.send_message(
+       message.chat.id,
+       reply_markup=get_update_keyboard(),
+       parse_mode='HTML'
+   )   
+
+def get_update_keyboard():
+    options = []
+    options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
+    options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
+    options.append(InlineKeyboardButton(text='Set Delivery Date', callback_data='3'))
+    options.append(InlineKeyboardButton(text='Reschedule Delivery Date', callback_data='4'))
+    keyboard = InlineKeyboardMarkup([options])
+    return keyboard
 
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
