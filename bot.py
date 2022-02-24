@@ -115,8 +115,7 @@ def reschedule(update, context):
         context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
     #check that pickup date is within 7 days
     pickUpDate = doc_dict['pickUpDate']
-    splitDate = pickUpDate.split(" at ")
-    d = datetime.strptime(splitDate[0], '%d %B %Y')
+    d = getDate(pickUpDate)
     
     #check if within the week
     
