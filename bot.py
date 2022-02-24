@@ -2,10 +2,11 @@ import logging
 import os
 import datetime
 from flask import Flask
+import time
 import threading
 import json
-from telegram.ext import Updater, CommandHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
 
 import firebase_admin
 from firebase_admin import firestore
@@ -25,6 +26,8 @@ PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
 
+
+app = Flask(__name__)
 
 def get_chat_id(update, context):
     chat_id = -1
@@ -134,18 +137,6 @@ def get_order(update, context, order_id):
                                  text="Sorry, unable to retrieve order.")
 
 
-def viewType(update, context):
-    # retrieve the deliveryType from firestore
-    if update.message.text.strip() == '/view': 
-        update.message.reply_text("Please specify the order which you wish to check the delivery type! \n Usage:/view [orderId] \n eg. /view 100")
-    else: 
-        # Obtain arguments of the command
-        command = update.message.text.split(" ")
-        order_id = command[1]    
-        doc = firestore_db.collection(u'orders').document(order_id).get()
-        doc_dict = doc.to_dict()
-        deliveryType = doc_dict['deliveryType']
-        context.bot.send_message(chat_id=get_chat_id(update, context), text=deliveryType)
     
 def getDate(date):
     splitDate = date.split(" at ")
@@ -243,7 +234,7 @@ def reschedule(update, context):
                 order.update({ "deliveryDate" : rescheduleDateTime })
                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
-def upgradePlan(update, context):
+def upgrade_plan(update, context):
     # Check if command usage is correct
     if update.message.text.strip() == '/upgrade': 
         update.message.reply_text("Please specify the type of plan you want to upgrade to! \n Usage:/upgrade [orderId] [deliveryType] \n eg. /upgrade 100 time-slot")
