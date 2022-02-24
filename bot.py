@@ -55,6 +55,8 @@ def query_handler(update, context):
     # Change your comparisons depending on what you chose as 'callback_data'
     if query.data == 'view_orders_action':
         view_orders(update, context)
+    elif query.data == 'reschedule-topup':
+        top_up_reschedules(update, context)
     elif 'upgrade_orders_action_' in query.data:
         upgrade_orders(update, context)
     elif "view-order-id-" in query.data:
@@ -200,6 +202,17 @@ def setDate(update, context):
                 doc.update({ "deliveryDate" : inputDate })
             # calendar, step = DetailedTelegramCalendar(min_date, max_date).build()
 
+def top_up_reschedules(update, context):
+    context.bot.send_invoice(chat_id=get_chat_id(update, context),
+                             title="Pay to reschedule",
+                             description="Pay to reschedule after 2 times rescheduled",
+                             payload="ninja-scheduler/top-up",
+                             provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
+                             currency="SGD",
+                             prices=[LabeledPrice("Payment for top-up", 2 * 100)],
+                             start_parameter="asdhjasdj")
+
+
 def reschedule(update, context):
     if update.message.text.strip() == '/reschedule': 
         update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
@@ -209,8 +222,12 @@ def reschedule(update, context):
         order_dict = order.to_dict()
         #check if rescheduling is allowed
         numReschedules = order_dict['numReschedules']
-        if numReschedules >= 2:
-            context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
+        if numReschedules == 0:
+            options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+            keyboard = InlineKeyboardMarkup([options])
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?",
+                                     reply_markup=keyboard)
         else:
             deliveryType = order_dict['deliveryType']
             pickUpDate = order_dict['pickUpDate'].date()
@@ -242,7 +259,7 @@ def reschedule(update, context):
             if not dateInRange(rescheduleDateTime, minDate, maxDate):
                 update.message.reply_text('Date out of range')
             else:
-                numReschedules += 1
+                numReschedules -= 1
                 order.update({ "numReschedules" : numReschedules })
                 order.update({ "deliveryDate" : rescheduleDateTime })
                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
@@ -415,6 +432,12 @@ def precheckout_callback(update, context):
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
+    elif 'top-up' in query.invoice_payload:
+        user_id = update.callback_query.message.chat.username
+        firestore_db.collection(u'users').document(user_id).update({
+            "numReschedules": 2
+        })
+        query.answer(ok=True)
     else:
         payload_split = update.pre_checkout_query.invoice_payload.split('/')
         update_db_after_payment(payload_split[2], payload_split[1])
