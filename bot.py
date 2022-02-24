@@ -30,7 +30,7 @@ APP_NAME = os.getenv("APP_NAME")
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
-    doc = firestore_db.collection(u'quotes').document(u'1').get()
+    doc = firestore_db.collection(u'users').document(u'1').get()
     doc_dict = doc.to_dict()
     name = doc_dict['name']
     update.message.reply_text(name)
