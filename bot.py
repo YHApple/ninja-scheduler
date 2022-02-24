@@ -164,7 +164,6 @@ def set_date(update, context):
     update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
 
 def inline_calendar_handler(update, context):
-    print('test test')
     selected, date = telegramcalendar.process_calendar_selection(update, context)
     doc = firestore_db.collection(u'users').document(u'1').get()
     doc_dict = doc.to_dict()
