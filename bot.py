@@ -27,9 +27,7 @@ APP_NAME = os.getenv("APP_NAME")
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
-    # do sth
-    print("test")
-    update.message.reply_text("Created by @tau_bar! Enjoy :)")
+    update.message.reply_text("Welcome to Ninja Scheduler! How can I help you with your delivery today?")
 
 
 def error(update, context):
