@@ -67,7 +67,7 @@ def process_calendar_selection(update, context):
     """
     ret_data = (False, None)
     query = update.callback_query
-    print(query)
+    print("!!!!!!!!!! " + str(query))
     (_, action, year, month, day) = separate_callback_data(query.data)
     curr = datetime.datetime(int(year), int(month), 1)
     if action == "IGNORE":
