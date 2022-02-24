@@ -183,7 +183,9 @@ def reschedule_order(update, context, order_id):
     selected, rescheduledDateTime = telegramcalendar.process_calendar_selection(update, context)
     print(rescheduledDateTime)
     order = firestore_db.collection(u'orders').document(order_id).get()
+    print(order)
     order_dict = order.to_dict()
+    print(order_dict)
     deliveryDate = order_dict['deliveryDate'].replace(tzinfo=None)
     print(deliveryDate)
     deliveryType = order_dict['deliveryType']
