@@ -1,5 +1,5 @@
+import logging
 import os
-import json
 import datetime
 
 from telegram.ext import Updater, CommandHandler
