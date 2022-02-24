@@ -23,11 +23,9 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
-
 
 app = Flask(__name__)
 
@@ -52,6 +50,7 @@ def get_update_keyboard():
                InlineKeyboardButton(text='Upgrade Plans', callback_data='upgrade_plan_action_')]
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
+
 
 # Handles the callback functions
 def query_handler(update, context):
@@ -97,8 +96,9 @@ def start(update, context):
                              reply_markup=get_update_keyboard())
     # input from text message
 
+
 def convert_order_to_button(order_id, action):
-    return InlineKeyboardButton(text=str(order_id), callback_data= action + "-order-id-" + str(order_id))
+    return InlineKeyboardButton(text=str(order_id), callback_data=action + "-order-id-" + str(order_id))
 
 
 def get_orders_keyboard(update, context, orders, action):
@@ -109,6 +109,7 @@ def get_orders_keyboard(update, context, orders, action):
 
 VIEW_ORDERS_INSTRUCTION = "You currently have {} orders scheduled for delivery. \n Which order do you wish to " \
                           "view? "
+
 
 # Retrieves the orders
 def view_orders(update, context):
@@ -121,8 +122,8 @@ def view_orders(update, context):
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
         context.bot.send_message(chat_id=get_chat_id(update, context),
-        text=VIEW_ORDERS_INSTRUCTION.format(num_orders),
-        reply_markup=get_orders_keyboard(update, context, orders, "view"))
+                                 text=VIEW_ORDERS_INSTRUCTION.format(num_orders),
+                                 reply_markup=get_orders_keyboard(update, context, orders, "view"))
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -157,59 +158,57 @@ def get_order(update, context, order_id):
                                  text="Sorry, unable to retrieve order.")
 
 def dateInRange(dateToCheck, minDate, maxDate):
-    return minDate >= dateToCheck and dateToCheck <= maxDate
-
-def set_date(update, context):
-    # update the delivery date on firestore
-    update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
+    return minDate <= dateToCheck <= maxDate
 
 def inline_calendar_handler(update, context):
-    selected, date = telegramcalendar.process_calendar_selection(update, context)
-    doc = firestore_db.collection(u'orders').document(u'200').get()
-    doc_dict = doc.to_dict()
-    deliveryDate = doc_dict['deliveryDate']
-    deliveryType = doc_dict['deliveryType']
-    pickUpDate = doc_dict['pickUpDate'].replace(tzinfo=None)
+    selected, rescheduledDateTime = telegramcalendar.process_calendar_selection(update, context)
+    order = firestore_db.collection(u'orders').document(u'200').get()
+    order_dict = order.to_dict()
+    deliveryDate = order_dict['deliveryDate'].replace(tzinfo=None)
+    deliveryType = order_dict['deliveryType']
+    numReschedules = order_dict['numReschedules']
+    pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
-    if deliveryType == "standard" and selected:
-        minDate = today + datetime.timedelta(days=3)
-        maxDate = today + datetime.timedelta(days=7)
-    elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
-        minDate = today + datetime.timedelta(days=1)
-        maxDate = today + datetime.timedelta(days=7)
-    elif deliveryType == "14-day" and selected:
-        minDate = today + datetime.timedelta(days=1)
-        maxDate = today + datetime.timedelta(days=14)
+    if numReschedules >= 2:
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
+    else:
+        numReschedules += 1
+        if deliveryType == "standard" and selected:
+            minDate = today + datetime.timedelta(days=3)
+            maxDate = today + datetime.timedelta(days=7)
+        elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
+            minDate = today + datetime.timedelta(days=1)
+            maxDate = today + datetime.timedelta(days=7)
+        elif deliveryType == "14-day" and selected:
+            minDate = today + datetime.timedelta(days=1)
+            maxDate = today + datetime.timedelta(days=14)
 
-    if dateInRange(date, minDate, maxDate):
-        context.bot.send_message(chat_id=update.callback_query.from_user.id,
-                                 text="Date set to " + (date.strftime("%d/%m/%Y")),
+        if dateInRange(rescheduledDateTime, minDate, maxDate):
+            # context.bot.send_message(chat_id=update.callback_query.from_user.id,
+            #                      text="Date set to " + (rescheduledDateTime.strftime("%d/%m/%Y")),
+            #                      reply_markup=ReplyKeyboardRemove())
+            order.update({"numReschedules": numReschedules})
+            order.update({ "deliveryDate" : rescheduledDateTime })
+            context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduledDateTime}"
+                                     ,reply_markup=ReplyKeyboardRemove())
+        else:
+            context.bot.send_message(chat_id=update.callback_query.from_user.id,
+                                 text="Date is out of range",
                                  reply_markup=ReplyKeyboardRemove())
-    else :
-        context.bot.send_message(chat_id=update.callback_query.from_user.id,
-                                     text="Date is out of range",
-                                     reply_markup=ReplyKeyboardRemove())
     # if deliveryType == "timeslot":
     # choose timeslot
 
+
 def reschedule(update, context):
     # update the deliveryDate and update the numReschedules
-    order = firestore_db.collection(u'orders').document(u'1').get()
-    order_dict = order.to_dict()
-    #check if rescheduling is allowed
-    numReschedules = order_dict['numReschedules']
-    if numReschedules >= 2:
-        context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
-    else:
-        deliveryType = order_dict['deliveryType']
-        pickUpDate = order_dict['pickUpDate'].date()
-        today = datetime.now().replace(hour=0, minute=0)
-        update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
-                # numReschedules += 1
-                # order.update({ "numReschedules" : numReschedules })
-                # order.update({ "deliveryDate" : rescheduleDateTime })
-                # context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
+    update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
+
+        # order.update({ "numReschedules" : numReschedules })
+        # order.update({ "deliveryDate" : rescheduleDateTime })
+        # context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
+
 
 def upgrade_plan(update, context):
     try:
@@ -222,6 +221,7 @@ def upgrade_plan(update, context):
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Sorry, unable to retrieve orders.")
+
 
 def upgrade_order(update, context, order_id):
     try:
@@ -243,19 +243,23 @@ def upgrade_order(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Sorry, unable to retrieve order.")
 
+
 def get_upgrade_keyboard(order_id):
     options = []
     options.append(InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier"))
-    options.append(InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
+    options.append(
+        InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
     options.append(InlineKeyboardButton(text='14 Day Tier', callback_data="upgrade-" + order_id + "_to_14day_tier"))
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
+
 
 ALREADY_AT_TIER_MESSAGE = """You are already at this tier. Do /reschedule if you wish to reschedule your package."""
 ALREADY_AT_HIGHER_TIER_MESSAGE = """You are already at a higher tier. Do /reschedule if you wish to reschedule your package."""
 UPGRADE_EXPRESS_SUCCESS_MESSAGE = """Successfully upgraded to express tier!"""
 UPGRADE_TIMESLOT_SUCCESS_MESSAGE = """Successfully upgraded to timeslot tier!"""
 UPGRADE_FAIL_MESSAGE = """Sorry, unable to retrieve order."""
+
 
 def upgrade_to_express(update, context, order_id):
     try:
@@ -279,6 +283,7 @@ def upgrade_to_express(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
+
 def upgrade_to_timeslot(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
@@ -298,6 +303,7 @@ def upgrade_to_timeslot(update, context, order_id):
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
 
 def upgrade_to_14day(update, context, order_id):
     try:
@@ -337,7 +343,7 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("setdate", set_date))
+    dp.add_handler(CommandHandler("reschedule", reschedule))
     dp.add_handler(CallbackQueryHandler(query_handler))
 
     # log all errors
