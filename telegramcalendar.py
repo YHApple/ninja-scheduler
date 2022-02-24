@@ -4,12 +4,12 @@ import datetime
 import calendar
 
 # reschedule type is initial or delivery
-def create_callback_data(action,year,month,day):
+def create_callback_data(order_id,action,year,month,day):
     """ Create the callback data associated to each button"""
-    return "CALENDAR" + ";" + ";".join([action,str(year),str(month),str(day)])
+    return "reschedule-order-id-" + ";" + ";".join([action,str(year),str(month),str(day)])
 
 
-def create_calendar(year=None,month=None):
+def create_calendar(order_id,year=None,month=None):
     """
     Create an inline keyboard with the provided year and month
     :param int year: Year to use in the calendar, if None the current year is used.
@@ -38,13 +38,13 @@ def create_calendar(year=None,month=None):
             if(day==0):
                 row.append(InlineKeyboardButton(" ",callback_data=data_ignore))
             else:
-                row.append(InlineKeyboardButton(str(day),callback_data=create_callback_data("DAY",year,month,day)))
+                row.append(InlineKeyboardButton(str(day),callback_data=create_callback_data(order_id,"DAY",year,month,day)))
         keyboard.append(row)
     #Last row - Buttons
     row=[]
-    row.append(InlineKeyboardButton("<",callback_data=create_callback_data("PREV-MONTH",year,month,day)))
+    row.append(InlineKeyboardButton("<",callback_data=create_callback_data(order_id,"PREV-MONTH",year,month,day)))
     row.append(InlineKeyboardButton(" ",callback_data=data_ignore))
-    row.append(InlineKeyboardButton(">",callback_data=create_callback_data("NEXT-MONTH",year,month,day)))
+    row.append(InlineKeyboardButton(">",callback_data=create_callback_data(order_id,"NEXT-MONTH",year,month,day)))
     keyboard.append(row)
 
     return InlineKeyboardMarkup(keyboard)
