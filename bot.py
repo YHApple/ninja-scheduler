@@ -1,12 +1,11 @@
 import logging
 import os
 import datetime
-from flask import Flask
 import time
 import threading
 import json
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, PreCheckoutQueryHandler, MessageHandler, Filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ChatAction, LabeledPrice
 
 import firebase_admin
 from firebase_admin import firestore
@@ -25,9 +24,6 @@ logger = logging.getLogger(__name__)
 PORT = int(os.environ.get('PORT', '8443'))
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 APP_NAME = os.getenv("APP_NAME")
-
-
-app = Flask(__name__)
 
 
 def get_chat_id(update, context):
@@ -314,13 +310,15 @@ def upgrade_to_express(update, context, order_id):
                                      text=ALREADY_AT_HIGHER_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            # stripe API
             firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "express"
             })
+            payment(update, context, del_type, "express", "Receive your package within 1 day of pickup!")
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=UPGRADE_EXPRESS_SUCCESS_MESSAGE,
                                      reply_markup=get_update_keyboard())
+
+
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -338,13 +336,16 @@ def upgrade_to_timeslot(update, context, order_id):
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            # stripe API
             firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "timeslot"
             })
+            payment(update, context, del_type, "14day-timeslot",
+                    "Choose the time slot which you want to receive your parcel (within 7 days)!")
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=UPGRADE_TIMESLOT_SUCCESS_MESSAGE,
                                      reply_markup=get_update_keyboard())
+
+
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -362,17 +363,58 @@ def upgrade_to_14day(update, context, order_id):
                                      text=ALREADY_AT_TIER_MESSAGE,
                                      reply_markup=get_update_keyboard())
         else:
-            # stripe API
+            payment(update, context, del_type, "14day-standard",
+                    "Not at home in the coming week? Delay your delivery up to 14 days!")
             firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "14day " + del_type
             })
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text="Successfully upgraded to 14day " + del_type + " tier!",
                                      reply_markup=get_update_keyboard())
+
     except Exception as e:
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
+
+def payment(update, context, current_type, new_type, type_description):
+    def get_price():
+        prices = {
+            "standard": 5,
+            "express": 6,
+            "time-slot": 7,
+            "14day-standard": 8,
+            "14day-timeslot": 9
+        }
+        return prices[new_type] - prices[current_type]
+    context.bot.send_invoice(chat_id=get_chat_id(update, context),
+                             title=new_type,
+                             description=type_description,
+                             payload="Custom-Payload",
+                             provider_token="284685063:TEST:MzA0NGRlNzJmMjFl",
+                             currency="SGD",
+                             prices=[LabeledPrice("Payment for " + new_type + " delivery", get_price() * 100)],
+                             start_parameter="asdhjasdj")
+
+
+# after (optional) shipping, it's the pre-checkout
+def precheckout_callback(update, context):
+    """Answers the PrecheckoutQuery"""
+    query = update.pre_checkout_query
+    # check the payload, is this from your bot?
+    if query.invoice_payload != 'Custom-Payload':
+        # answer False pre_checkout_query
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        query.answer(ok=True)
+
+
+# finally, after contacting the payment provider...
+def successful_payment_callback(update, context):
+    """Confirms the successful payment."""
+    # do something after successfully receiving payment?
+    update.message.reply_text("Thank you for your payment!")
 
 
 def error(update, context):
@@ -411,7 +453,4 @@ def main():
 
 
 if __name__ == '__main__':
-    first_thread = threading.Thread(target=main)
-    second_thread = threading.Thread(target=app.run)
-    first_thread.start()
-    second_thread.start()
+    main()
