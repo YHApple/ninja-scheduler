@@ -116,9 +116,6 @@ def reschedule(update, context):
     #check that pickup date is within 7 days
     pickUpDate = doc_dict['pickUpDate']
     d = getDate(pickUpDate)
-    
-    #check if within the week
-    
     context.bot.send_message(chat_id=get_chat_id(update, context), text=pickUpDate)
     
 
