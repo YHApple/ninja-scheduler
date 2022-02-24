@@ -98,8 +98,8 @@ def convert_order_to_button(order_id, action):
 
 def get_orders_keyboard(update, context, orders, action):
     options = list(map(convert_order_to_button, orders, (action,) * len(orders)))
-    print(options)
     keyboard = InlineKeyboardMarkup([options])
+    print(options)
     return keyboard
 
 
@@ -116,6 +116,7 @@ def view_orders(update, context):
         num_orders = len(orders)
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
+        print(orders)
         context.bot.send_message(chat_id=get_chat_id(update, context),
         text=VIEW_ORDERS_INSTRUCTION.format(num_orders),
         reply_markup=get_orders_keyboard(update, context, orders, "view"))
@@ -312,7 +313,7 @@ def upgrade_to_express(update, context, order_id):
             update.message.reply_text(ALREADY_AT_HIGHER_TIER_MESSAGE)
         else:
             # stripe API
-            order.update({
+            firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "express"
             })
             update.message.reply_text(UPGRADE_EXPRESS_SUCCESS_MESSAGE)
@@ -332,7 +333,7 @@ def upgrade_to_timeslot(update, context, order_id):
             update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
         else:
             # stripe API
-            order.update({
+            firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "timeslot"
             })
             update.message.reply_text(UPGRADE_TIMESLOT_SUCCESS_MESSAGE)
@@ -352,7 +353,7 @@ def upgrade_to_14day(update, context, order_id):
             update.message.reply_text(ALREADY_AT_TIER_MESSAGE)
         else:
             # stripe API
-            order.update({
+            firestore_db.collection(u'orders').document(order_id).update({
                 "deliveryType": "14day " + del_type
             })
             update.message.reply_text("Successfully upgraded to 14day " + del_type + " tier!")
