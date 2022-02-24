@@ -30,11 +30,28 @@ APP_NAME = os.getenv("APP_NAME")
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
-    doc = firestore_db.collection(u'users').document(u'1').get()
-    doc_dict = doc.to_dict()
-    name = doc_dict['name']
-    update.message.reply_text(name)
-    # update.message.reply_text("Welcome to Ninja Scheduler! How can I help you with your delivery today?")
+    # doc = firestore_db.collection(u'users').document(u'1').get()
+    # doc_dict = doc.to_dict()
+    # name = doc_dict['name']
+    # update.message.reply_text(name)
+    options = []
+    options.append(InlineKeyboardButton(text='View Plan', callback_data='1'))
+    options.append(InlineKeyboardButton(text='Upgrade Plan', callback_data='2'))
+    options.append(InlineKeyboardButton(text='Set Delivery Date', callback_data='3'))
+    options.append(InlineKeyboardButton(text='Reschedule Delivery Date', callback_data='4'))
+    reply_markup = InlineKeyboardMarkup([options])
+
+    context.bot.send_message(chat_id=get_chat_id(update, context), text='Welcome to Ninja Scheduler! How can I help you with your delivery today?', reply_markup=reply_markup)
+
+    choice = update.callback_query.data
+
+    if choice == '1':
+    # Choice 1: Text
+        update.callback_query.message.edit_text('You have chosen Text')
+
+
+
+    
 
 
 def error(update, context):
@@ -60,11 +77,11 @@ def main():
     dp.add_error_handler(error)
 
     # Start the Bot
-    updater.start_webhook(listen="0.0.0.0",
-                          port=PORT,
-                          url_path=TOKEN)
+    # updater.start_webhook(listen="0.0.0.0",
+    #                       port=PORT,
+    #                       url_path=TOKEN)
 
-    updater.bot.set_webhook(APP_NAME + TOKEN)
+    # updater.bot.set_webhook(APP_NAME + TOKEN)
 
     # # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # # SIGTERM or SIGABRT. This should be used most of the time, since
