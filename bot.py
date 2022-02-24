@@ -62,10 +62,12 @@ def query_handler(update, context):
     elif "view-order-id-" in query.data:
         order_id = query.data[14:]
         get_order(update, context, order_id)
-    elif "reschedule-order-id-" in query.data:
-        order_id = query.data[20:]
+    elif "reschedule_orders_action" in query.data:
+        order_id = query.data[24:]
         context.bot.send_message(chat_id=get_chat_id(update, context), text='Please select a date:',
                                  reply_markup=telegramcalendar.create_calendar(order_id))
+    elif "reschedule_order_id" in query.data:
+        order_id = query.data[20:]
         reschedule_order(update, context, order_id)
     elif "upgrade-order-id-" in query.data:
         order_id = query.data[17:]
@@ -149,7 +151,7 @@ def view_orders(update, context):
 
 def get_order_keyboard(order_id):
     options = [[InlineKeyboardButton(text='Upgrade Plan', callback_data='upgrade-order-id-' + order_id)],
-               [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule-order-id-' + order_id)]]
+               [InlineKeyboardButton(text='Reschedule Order', callback_data='reschedule-orders-action' + order_id)]]
     keyboard = InlineKeyboardMarkup(options)
     return keyboard
 

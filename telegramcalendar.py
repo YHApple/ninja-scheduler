@@ -6,7 +6,7 @@ import calendar
 # reschedule type is initial or delivery
 def create_callback_data(order_id,action,year,month,day):
     """ Create the callback data associated to each button"""
-    return "reschedule-order-id-" + ";" + ";".join([action,str(year),str(month),str(day)])
+    return "reschedule-order-id-" + order_id + ";" + ";".join([action,str(year),str(month),str(day)])
 
 
 def create_calendar(order_id,year=None,month=None):
@@ -38,13 +38,13 @@ def create_calendar(order_id,year=None,month=None):
             if(day==0):
                 row.append(InlineKeyboardButton(" ",callback_data=data_ignore))
             else:
-                row.append(InlineKeyboardButton(str(day),callback_data=create_callback_data(order_id,"DAY",year,month,day)))
+                row.append(InlineKeyboardButton(str(day),callback_data=create_callback_data(order_id, "DAY",year,month,day)))
         keyboard.append(row)
     #Last row - Buttons
     row=[]
-    row.append(InlineKeyboardButton("<",callback_data=create_callback_data(order_id,"PREV-MONTH",year,month,day)))
+    row.append(InlineKeyboardButton("<",callback_data=create_callback_data(order_id, "PREV-MONTH",year,month,day)))
     row.append(InlineKeyboardButton(" ",callback_data=data_ignore))
-    row.append(InlineKeyboardButton(">",callback_data=create_callback_data(order_id,"NEXT-MONTH",year,month,day)))
+    row.append(InlineKeyboardButton(">",callback_data=create_callback_data(order_id, "NEXT-MONTH",year,month,day)))
     keyboard.append(row)
 
     return InlineKeyboardMarkup(keyboard)
