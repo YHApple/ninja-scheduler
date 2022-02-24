@@ -1,17 +1,31 @@
 import logging
 import os
+import json
 
 from telegram.ext import Updater, CommandHandler
 
 import random
 
-# import firebase_admin
-# from firebase_admin import credentials
-# from firebase_admin import firestore
-# # cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
-# firebase_admin.initialize_app(cred)
+import firebase_admin
+from firebase_admin import firestore
 
-# firestore_db = firestore.client()
+# cred = credentials.Certificate(os.getenv("FIREBASE_CERT"))
+cred_dict = {
+  "type": "service_account",
+  "project_id": "ninja-scheduler-4b901",
+  "private_key_id": os.getenv("FIRESTORE_PRIVATE_KEY_ID"),
+  "private_key": os.getenv("FIRESTORE_PRIVATE_KEY"),
+  "client_email": "firebase-adminsdk-t77zz@ninja-scheduler-4b901.iam.gserviceaccount.com",
+  "client_id": "107085050770394748504",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-t77zz%40ninja-scheduler-4b901.iam.gserviceaccount.com"
+}
+cred = json.dumps(cred_dict)
+firebase_admin.initialize_app(cred)
+
+firestore_db = firestore.client()
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -27,6 +41,10 @@ APP_NAME = os.getenv("APP_NAME")
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
+    doc = firestore_db.collection(u'quotes').document(u'1').get()
+    doc_dict = doc.to_dict()
+    name = doc_dict['name']
+    update.message.reply_text(name)
     update.message.reply_text("Welcome to Ninja Scheduler! How can I help you with your delivery today?")
 
 
