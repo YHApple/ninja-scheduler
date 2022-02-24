@@ -455,7 +455,7 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
         })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
-                                     rescheduledDateTime.strftime("%d/%m/%Y") + time_string)
+                                     date.strftime("%d/%m/%Y") + time_string)
                                  , reply_markup=get_update_keyboard())
     except Exception as e:
         print(e)
