@@ -248,7 +248,7 @@ def reschedule(update, context):
                 order.update({ "deliveryDate" : rescheduleDateTime })
                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
-def upgradePlan(update, context):
+def upgrade_plan(update, context):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
