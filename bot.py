@@ -171,7 +171,7 @@ def inline_calendar_handler(update, context):
     print(doc_dict)
     deliveryDate = doc_dict['deliveryDate']
     deliveryType = doc_dict['deliveryType']
-    pickUpDate = doc_dict['pickUpDate']
+    pickUpDate = doc_dict['pickUpDate'].replace(tzInfo=None)
     # today = datetime.datetime.now().replace(hour=0, minute=0)
 
     if deliveryType == "standard" and selected:
