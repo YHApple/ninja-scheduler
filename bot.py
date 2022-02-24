@@ -169,6 +169,8 @@ def inline_calendar_handler(update, context):
     numReschedules = int(order_dict['numReschedules'])
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
+    minDate = today
+    maxDate = today
 
     if numReschedules >= 2:
         context.bot.send_message(chat_id=get_chat_id(update, context),
