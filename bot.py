@@ -55,6 +55,8 @@ def query_handler(update, context):
     # Change your comparisons depending on what you chose as 'callback_data'
     if query.data == 'view_orders_action':
         view_orders(update, context)
+    elif query.data == 'reschedule-topup':
+        top_up_reschedules(update, context)
     elif 'upgrade_orders_action_' in query.data:
         upgrade_orders(update, context)
     elif "view-order-id-" in query.data:
@@ -213,14 +215,67 @@ def reschedule_order(update, context, order_id):
     # choose timeslot
 
 
+def top_up_reschedules(update, context):
+    context.bot.send_invoice(chat_id=get_chat_id(update, context),
+                             title="Pay to reschedule",
+                             description="Pay to reschedule after 2 times rescheduled",
+                             payload="ninja-scheduler/top-up",
+                             provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
+                             currency="SGD",
+                             prices=[LabeledPrice("Payment for top-up", 2 * 100)],
+                             start_parameter="asdhjasdj")
+
+
 def reschedule(update, context):
-    # update the deliveryDate and update the numReschedules
-    update.message.reply_text(text='Please select a date:', reply_markup=telegramcalendar.create_calendar())
+    if update.message.text.strip() == '/reschedule': 
+        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
+    else:
+        # update the deliveryDate and update the numReschedules
+        order = firestore_db.collection(u'orders').document(u'1').get()
+        order_dict = order.to_dict()
+        #check if rescheduling is allowed
+        numReschedules = order_dict['numReschedules']
+        if numReschedules == 0:
+            options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+            keyboard = InlineKeyboardMarkup([options])
+            context.bot.send_message(chat_id=get_chat_id(update, context),
+                                     text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?",
+                                     reply_markup=keyboard)
+        else:
+            deliveryType = order_dict['deliveryType']
+            pickUpDate = order_dict['pickUpDate'].date()
+            today = datetime.now().replace(hour=0, minute=0)
+            print(today)
 
-        # order.update({ "numReschedules" : numReschedules })
-        # order.update({ "deliveryDate" : rescheduleDateTime })
-        # context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
+            userInput = update.message.text
+            #split date and time
+            splitInput = userInput.split(' ')
+            print(splitInput)
+            #split day/month/year
+            splitDate = splitInput.split('/')
+            rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
 
+            if deliveryType=="standard":
+                minDate = today + datetime.timedelta(days=3)
+                maxDate = pickUpDate + datetime.timedelta(days=7) 
+            elif deliveryType=="express" or deliveryType=="timeslot":
+                minDate = today + datetime.timedelta(days=1)
+                maxDate = pickUpDate + datetime.timedelta(days=7)
+            else:
+                minDate = today + datetime.timedelta(days=1)
+                maxDate = pickUpDate + datetime.timedelta(days=14)
+
+            if "timeslot" in deliveryType:
+                time = userInput[1]
+                rescheduleDateTime.replace(hour=int(time[:2]), minute=int(time[2:]))
+    
+            if not dateInRange(rescheduleDateTime, minDate, maxDate):
+                update.message.reply_text('Date out of range')
+            else:
+                numReschedules -= 1
+                order.update({ "numReschedules" : numReschedules })
+                order.update({ "deliveryDate" : rescheduleDateTime })
+                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
 def upgrade_orders(update, context):
     try:
@@ -308,10 +363,7 @@ def upgrade_to_timeslot(update, context, order_id):
         time.sleep(1)
         order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
-        print(order_dict)
         del_type = order_dict["deliveryType"]
-        context.bot.send_message(chat_id=get_chat_id(update, context),
-                                 text=del_type)
         if "timeslot" in del_type:
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                      text=ALREADY_AT_TIER_MESSAGE,
@@ -344,6 +396,7 @@ def upgrade_to_14dayts(update, context, order_id):
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
+
 
 def upgrade_to_14daystd(update, context, order_id):
     try:
@@ -413,11 +466,6 @@ def payment(update, context, current_type, new_type, type_description, order_id)
         }
         return prices[new_type] - prices[current_type]
 
-    print("Price function", get_price())
-    print("current_type", current_type)
-    print("new_type", new_type)
-    print("dec", type_description)
-    print("oid", order_id)
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title=new_type,
                              description=type_description,
@@ -432,16 +480,18 @@ def payment(update, context, current_type, new_type, type_description, order_id)
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     query = update.pre_checkout_query
-    print("inside pre checkout function")
-    print(query)
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
+    elif 'top-up' in query.invoice_payload:
+        user_id = update.callback_query.message.chat.username
+        firestore_db.collection(u'users').document(user_id).update({
+            "numReschedules": 2
+        })
+        query.answer(ok=True)
     else:
-        print("working here")
         payload_split = update.pre_checkout_query.invoice_payload.split('/')
-        print(payload_split)
         update_db_after_payment(payload_split[2], payload_split[1])
         query.answer(ok=True)
 
