@@ -85,15 +85,15 @@ def query_handler(update, context):
         reschedule_to_time(update, context, date, order_id, 9)
     elif "12-15" in query.data:
         order_id = query.data[11:-20]
-        date = query.data[-15:-5]
+        date = query.data[-16:-6]
         reschedule_to_time(update, context, date, order_id, 12)
     elif "15-18" in query.data:
         order_id = query.data[11:-20]
-        date = query.data[-15:-5]
+        date = query.data[-16:-6]
         reschedule_to_time(update, context, date, order_id, 15)
     elif "_to_18-20" in query.data:
         order_id = query.data[11:-20]
-        date = query.data[-15:-5]
+        date = query.data[-16:-6]
         reschedule_to_time(update, context, date, order_id, 18)
     elif "_to_14daystd" in query.data:
         order_id = query.data[8:-12]
@@ -168,7 +168,7 @@ def get_order(update, context, order_id):
         num_res = order_dict["numReschedules"]
         text = "Your order {} is due to arrive by {}. \n The current delivery type for this order is: " \
                "{}.\n You have {} reschedules left.\n What do you want to do? "
-        formatted_text = text.format(order_id, date_time, del_type, str(2 - int(num_res)))
+        formatted_text = text.format(order_id, date_time, del_type, str(num_res))
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=formatted_text,
                                  reply_markup=get_order_keyboard(order_id))
@@ -310,7 +310,7 @@ def upgrade_order(update, context, order_id):
         num_res = order_dict["numReschedules"]
         text = "Your order {} is due to arrive on {}. \nThe current delivery type for this order is: {}.\n You have {" \
                "} reschedules left.\n What plan would you like to upgrade to? "
-        formatted_text = text.format(order_id, date_time, del_type, str(2 - int(num_res)))
+        formatted_text = text.format(order_id, date_time, del_type, str(num_res))
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=formatted_text,
                                  reply_markup=get_upgrade_keyboard(order_id))
@@ -439,7 +439,7 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]))
+        date = datetime.datetime(int(dateString[0:4]), int(dateString[5:7]), int(dateString[8:10]))
         firestore_db.collection(u'orders').document(order_id).update({
             "deliveryDate": date.replace(hour=rescheduleTime)
         })
@@ -451,13 +451,13 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
             time_string = " between 3pm to 6pm"
         else:
             time_string = " between 6pm to 10pm"
-
+        numReschedules = firestore_db.collection(u'orders').document(order_id).get().to_dict()['numReschedules']
         firestore_db.collection(u'orders').document(order_id).update({
-            "numReschedules": numReschedules - 1
+            "numReschedules": str(int(numReschedules) - 1)
         })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
-                                     rescheduledDateTime.strftime("%d/%m/%Y") + time_string)
+                                     date.strftime("%d/%m/%Y") + time_string)
                                  , reply_markup=get_update_keyboard())
     except Exception as e:
         print(e)
