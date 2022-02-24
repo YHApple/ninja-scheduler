@@ -19,7 +19,7 @@ def create_calendar(order_id,year=None,month=None):
     now = datetime.datetime.now()
     if year == None: year = now.year
     if month == None: month = now.month
-    data_ignore = create_callback_data("IGNORE", year, month, 0)
+    data_ignore = create_callback_data(order_id, "IGNORE", year, month, 0)
     keyboard = []
     #First row - Month and Year
     row=[]
