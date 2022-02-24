@@ -451,7 +451,7 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
             time_string = " between 6pm to 10pm"
         numReschedules = firestore_db.collection(u'orders').document(order_id).get().to_dict()['numReschedules']
         firestore_db.collection(u'orders').document(order_id).update({
-            "numReschedules": numReschedules - 1
+            "numReschedules": str(int(numReschedules) - 1)
         })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
