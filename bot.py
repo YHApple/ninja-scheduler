@@ -437,7 +437,7 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]))
+        date = datetime.datetime(int(dateString[0:4]), int(dateString[5:7]), int(dateString[8:10]))
         firestore_db.collection(u'orders').document(order_id).update({
             "deliveryDate": date.replace(hour=rescheduleTime)
         })
