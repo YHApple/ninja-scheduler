@@ -72,18 +72,22 @@ def query_handler(update, context):
     elif "_to_timeslot_tier" in query.data:
         order_id = query.data[8:-17]
         upgrade_to_timeslot(update, context, order_id)
-    elif "_to_9-12" in query.data:
-        order_id = query.data[11:-8]
-        reschedule_to_time(update, context, order_id, 9)
-    elif "_to_12-15" in query.data:
-        order_id = query.data[11:-9]
-        reschedule_to_time(update, context, order_id, 12)
-    elif "_to_15-18" in query.data:
-        order_id = query.data[11:-9]
-        reschedule_to_time(update, context, order_id, 15)
+    elif "9-12" in query.data:
+        order_id = query.data[11:-19]
+        date = query.data[-16:-6]
+        reschedule_to_time(update, context, date, order_id, 9)
+    elif "12-15" in query.data:
+        order_id = query.data[11:-20]
+        date = query.data[-16:-6]
+        reschedule_to_time(update, context, date, order_id, 12)
+    elif "15-18" in query.data:
+        order_id = query.data[11:-20]
+        date = query.data[-16:-6]
+        reschedule_to_time(update, context, date, order_id, 15)
     elif "_to_18-20" in query.data:
-        order_id = query.data[11:-9]
-        reschedule_to_time(update, context, order_id, 18)
+        order_id = query.data[11:-20]
+        date = query.data[-16:-6]
+        reschedule_to_time(update, context, date, order_id, 18)
     elif "_to_14daystd" in query.data:
         order_id = query.data[8:-12]
         upgrade_to_14daystd(update, context, order_id)
@@ -179,12 +183,11 @@ def reschedule_order(update, context, order_id):
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
 
-    if numReschedules >= 2:
+    if numReschedules <= 0:
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
                                     ,reply_markup=ReplyKeyboardRemove())
     else:
-        numReschedules += 1
         if deliveryType == "standard" and selected:
             minDate = today + datetime.timedelta(days=3)
             maxDate = pickUpDate + datetime.timedelta(days=7)
@@ -202,13 +205,6 @@ def reschedule_order(update, context, order_id):
             context.bot.send_message(chat_id=get_chat_id(update, context),
                                     text=f"Please select a time slot",
                                     reply_markup=get_time_keyboard(update, context, rescheduledDateTime, order_id))
-            firestore_db.collection(u'orders').document(order_id).update({
-                "numReschedules": str(numReschedules)
-            })
-            firestore_db.collection(u'orders').document(order_id).update({
-                 "deliveryDate": rescheduledDateTime
-            })
-
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
                                  text="Date is out of range",
@@ -370,17 +366,18 @@ def upgrade_to_14daystd(update, context, order_id):
 
 def get_time_keyboard(update, context, date, order_id):
     ReplyKeyboardRemove()
-    options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + '_to_9-12'),
-               InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + '_to_12-15'),
-               InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + '_to_15-18'),
-               InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + '_to_18-22')]
+    options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
+               InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15'),
+               InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_15-18'),
+               InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] +'_18-22')]
     keyboard = InlineKeyboardMarkup([options])
     return keyboard
 
-def reschedule_to_time(update, context, date, order_id, time):
+def reschedule_to_time(update, context, dateString, order_id, time):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
+        date = datetime.datetime(int(date[0:4]), int(date[5:7]), int(date[8:10]))
         firestore_db.collection(u'orders').document(order_id).update({
             "deliveryDate": date.replace(hour=time)
         })
@@ -392,6 +389,10 @@ def reschedule_to_time(update, context, date, order_id, time):
             time_string = " between 3pm to 6pm"
         else:
             time_string = " between 6pm to 10pm"
+
+        firestore_db.collection(u'orders').document(order_id).update({
+            "numReschedules": numReschedules - 1
+        })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
                                      rescheduledDateTime.strftime("%d/%m/%Y") + time_string)
