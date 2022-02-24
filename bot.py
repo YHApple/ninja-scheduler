@@ -134,24 +134,30 @@ def reschedule(update, context):
         order_dict = order.to_dict()
         #check if rescheduling is allowed
         numReschedules = order_dict['numReschedules']
-        if numReschedules > 2:
-            context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit!")
+        if numReschedules >= 2:
+            context.bot.send_message(chat_id=get_chat_id(update, context), text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?")
         else:
             deliveryType = order_dict['deliveryType']
             pickUpDate = order_dict['pickUpDate'].date()
             today = datetime.today()
+
             userInput = update.message.text
-            splitInput = userInput.split('/')
-            rescheduleDate = datetime.datetime(splitInput[2], splitInput[1], splitInput[0])
+            splitInput = userInput.split(' ')
+            splitDate = splitInput.split('/')
+            rescheduleDate = datetime.datetime(splitDate[2], splitDate[1], splitDate[0])
+
             if deliveryType=="standard":
                 minDate = today + datetime.timedelta(days=3)
                 maxDate = pickUpDate + datetime.timedelta(days=7) 
-            elif deliveryType=="express":
+            elif deliveryType=="express" or deliveryType=="timeslot":
                 minDate = today + datetime.timedelta(days=1)
                 maxDate = pickUpDate + datetime.timedelta(days=7)
             else:
-                minDate = today + datetime.timedelta(days=3)
+                minDate = today + datetime.timedelta(days=1)
                 maxDate = pickUpDate + datetime.timedelta(days=14)
+
+            if "timeslot" in deliveryType:
+                time = userInput[1]
     
             if not dateInRange(rescheduleDate, minDate, maxDate):
                 update.message.reply_text('Date out of range')
