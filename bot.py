@@ -376,11 +376,11 @@ def upgrade_to_14day(update, context, order_id):
 def payment(update, context, current_type, new_type, type_description, order_id):
     def get_price():
         prices = {
-            "standard": 5,
-            "express": 6,
+            "standard": 3,
+            "express": 5,
             "time-slot": 7,
-            "14day-standard": 8,
-            "14day-timeslot": 9
+            "14day-standard": 9,
+            "14day-timeslot": 11
         }
         return prices[new_type] - prices[current_type]
 
