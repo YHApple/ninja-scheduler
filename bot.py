@@ -189,6 +189,7 @@ def reschedule_order(update, context, order_id):
     numReschedules = int(order_dict['numReschedules'])
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
+    back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
 
     if numReschedules <= 0:
         options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
@@ -228,7 +229,7 @@ def reschedule_order(update, context, order_id):
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
                                  text="Date is out of range",
-                                 reply_markup=ReplyKeyboardRemove())
+                                 reply_markup=InlineKeyboardMarkup([[back_button]]))
     # if deliveryType == "timeslot":
     # choose timeslot
 
@@ -440,11 +441,13 @@ def get_time_keyboard(update, context, date, order_id):
     ReplyKeyboardRemove()
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12')
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15')
-    options = [InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
+    options = [
+                InlineKeyboardButton(text='9am-12pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12'),
                InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15'),
                InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_15-18'),
                InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] +'_18-22')]
-    keyboard = InlineKeyboardMarkup([options])
+    back = InlineKeyboardButton(text='←', callback_data= 'reschedule_orders_action' + order_id),
+    keyboard = InlineKeyboardMarkup([back, options])
     return keyboard
 
 def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
