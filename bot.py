@@ -255,7 +255,7 @@ def main():
 
 
 if __name__ == '__main__':
-    #first_thread = threading.Thread(target=app.run)
-    second_thread = threading.Thread(target=main)
-    #first_thread.start()
+    first_thread = threading.Thread(target=main)
+    second_thread = threading.Thread(target=app.run)
+    first_thread.start()
     second_thread.start()
