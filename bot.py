@@ -189,6 +189,7 @@ def reschedule_order(update, context, order_id):
     numReschedules = int(order_dict['numReschedules'])
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
+    back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
 
     if numReschedules <= 0:
         options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
@@ -217,7 +218,7 @@ def reschedule_order(update, context, order_id):
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
                                  text="Date is out of range",
-                                 reply_markup=InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id))
+                                 reply_markup=InlineKeyboardMarkup([[back_button]]))
     # if deliveryType == "timeslot":
     # choose timeslot
 
