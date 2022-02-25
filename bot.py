@@ -513,6 +513,7 @@ def successful_payment_callback(update, context):
         doc_ref = firestore_db.collection(u'orders').document(order_id)
         order_dict = doc_ref.get().to_dict()
         date_time = order_dict["deliveryDate"]
+        print(date_time)
         doc_ref.update({
             "deliveryDate": date_time.replace(hour=0)
         })
