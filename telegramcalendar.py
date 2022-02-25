@@ -67,12 +67,9 @@ def process_calendar_selection(update, context):
     """
     ret_data = (False, None)
     query = update.callback_query
-    print("!!!!!!!!!! " + str(query))
     (_, action, year, month, day) = separate_callback_data(query.data)
     curr = datetime.datetime(int(year), int(month), 1)
-    print(query.data)
     order_id = query.data.split(";")[0][20:]
-    print(order_id)
     if action == "IGNORE":
         context.bot.answer_callback_query(callback_query_id=query.id)
     elif action == "DAY":
