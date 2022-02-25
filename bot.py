@@ -225,7 +225,7 @@ def reschedule_order(update, context, order_id):
                 })
                 context.bot.send_message(chat_id=get_chat_id(update, context),
                                          text=f"Your delivery has been rescheduled to " + rescheduledDateTime.strftime("%d/%m/%Y") +
-                                         f"!\nYou now have {numReschedules} left.",
+                                         f"!\nYou now have {numReschedules} reschedules left.",
                                          reply_markup=get_update_keyboard())
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
@@ -473,7 +473,7 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
         })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
-                                     date.strftime("%d/%m/%Y") + time_string + f"!\nYou now have {numReschedules} left.")
+                                     date.strftime("%d/%m/%Y") + time_string + f"!\nYou now have {numReschedules} reschedules left.")
                                  , reply_markup=get_update_keyboard())
     except Exception as e:
         print(e)
