@@ -518,7 +518,7 @@ def precheckout_callback(update, context):
         query.answer(ok=False, error_message="Something went wrong...")
     elif 'top-up' in query.invoice_payload:
         print("top up")
-        user_id = update.pre_checkout_query
+        user_id = update.pre_checkout_query["from"].username
         print(user_id)
         firestore_db.collection(u'users').document(user_id).update({
             "numReschedules": 2
