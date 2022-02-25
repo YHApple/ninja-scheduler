@@ -289,7 +289,7 @@ def upgrade_order(update, context, order_id):
     try:
         context.bot.send_chat_action(chat_id=get_chat_id(update, context), action=ChatAction.TYPING, timeout=1)
         time.sleep(1)
-        order = firestore_db.collection(u'orders').document(order_id).get();
+        order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
         date_time = date_time_formatter(order_dict["deliveryDate"].strftime("%m/%d/%Y, %H:%M:%S"))
         del_type = order_dict["deliveryType"]
@@ -408,7 +408,7 @@ def upgrade_to_14daystd(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
-def get_time_keyboard(update, context, date, order_id, isShowBack = true):
+def get_time_keyboard(update, context, date, order_id, isShowBack = True):
     ReplyKeyboardRemove()
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12')
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15')
@@ -504,7 +504,6 @@ def update_db_after_payment(order_id, del_type):
 def successful_payment_callback(update, context):
     """Confirms the successful payment."""
     # do something after successfully receiving payment?
-
     invoice_split = update.message.successful_payment.invoice_payload.split("/")
     order_id = invoice_split[2]
     doc_ref = firestore_db.collection(u'orders').document(order_id)
