@@ -357,13 +357,13 @@ def upgrade_order(update, context, order_id):
 
 
 def get_upgrade_keyboard(order_id):
-    options = []
-    options.append(InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier"))
-    options.append(InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier"))
-    options.append(
-        InlineKeyboardButton(text='14 Day Standard Tier', callback_data="upgrade-" + order_id + "_to_14daystd"))
-    options.append(InlineKeyboardButton(text='14 Day Timeslot Tier', callback_data="upgrade-" + order_id + "_to_14dayts"))
-    keyboard = InlineKeyboardMarkup([options])
+    options = [[InlineKeyboardButton(text='Express Tier', callback_data="upgrade-" + order_id + "_to_express_tier")],
+               [InlineKeyboardButton(text='TimeSlot Tier', callback_data="upgrade-" + order_id + "_to_timeslot_tier")],
+               [
+                   InlineKeyboardButton(text='14 Day Standard Tier',
+                                        callback_data="upgrade-" + order_id + "_to_14daystd")],
+               [InlineKeyboardButton(text='14 Day Timeslot Tier', callback_data="upgrade-" + order_id + "_to_14dayts")]]
+    keyboard = InlineKeyboardMarkup(options)
     return keyboard
 
 
