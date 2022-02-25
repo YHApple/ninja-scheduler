@@ -224,7 +224,8 @@ def reschedule_order(update, context, order_id):
                     "numReschedules" : str(numReschedules)
                 })
                 context.bot.send_message(chat_id=get_chat_id(update, context),
-                                         text=f"Your delivery has been rescheduled to " + rescheduledDateTime.strftime("%d/%m/%Y"),
+                                         text=f"Your delivery has been rescheduled to " + rescheduledDateTime.strftime("%d/%m/%Y") +
+                                         f"!\nYou now have {numReschedules} left.",
                                          reply_markup=get_update_keyboard())
         else:
             context.bot.send_message(chat_id=update.callback_query.from_user.id,
@@ -466,13 +467,13 @@ def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
             time_string = " between 3pm to 6pm"
         else:
             time_string = " between 6pm to 10pm"
-        numReschedules = firestore_db.collection(u'orders').document(order_id).get().to_dict()['numReschedules']
+        numReschedules = int(firestore_db.collection(u'orders').document(order_id).get().to_dict()['numReschedules']) - 1
         firestore_db.collection(u'orders').document(order_id).update({
-            "numReschedules": str(int(numReschedules) - 1)
+            "numReschedules": str(numReschedules)
         })
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=f"Your delivery has been rescheduled to " + (
-                                     date.strftime("%d/%m/%Y") + time_string)
+                                     date.strftime("%d/%m/%Y") + time_string + f"!\nYou now have {numReschedules} left.")
                                  , reply_markup=get_update_keyboard())
     except Exception as e:
         print(e)
