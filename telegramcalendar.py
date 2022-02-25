@@ -70,9 +70,9 @@ def process_calendar_selection(update, context):
     print("!!!!!!!!!! " + str(query))
     (_, action, year, month, day) = separate_callback_data(query.data)
     curr = datetime.datetime(int(year), int(month), 1)
-    print(str(query["reply_markup"]["inline_keyboard"][0][0]))
-    orderId = query["reply_markup"]["inline_keyboard"][0][0]['callback_data'].split(";")[0][20:]
-    print(orderId)
+    print(query.data)
+    order_id = query.data.split(";")[0][20:]
+    print(order_id)
     if action == "IGNORE":
         context.bot.answer_callback_query(callback_query_id=query.id)
     elif action == "DAY":
@@ -86,13 +86,13 @@ def process_calendar_selection(update, context):
         context.bot.edit_message_text(text=query.message.text,
                                       chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
-                                      reply_markup=create_calendar(int(pre.year), int(pre.month)))
+                                      reply_markup=create_calendar(order_id, int(pre.year), int(pre.month)))
     elif action == "NEXT-MONTH":
         ne = curr + datetime.timedelta(days=31)
         context.bot.edit_message_text(text=query.message.text,
                                       chat_id=query.message.chat_id,
                                       message_id=query.message.message_id,
-                                      reply_markup=create_calendar(int(ne.year), int(ne.month)))
+                                      reply_markup=create_calendar(order_id, int(ne.year), int(ne.month)))
     else:
         context.bot.answer_callback_query(callback_query_id=query.id, text="Something went wrong!")
         # UNKNOWN
