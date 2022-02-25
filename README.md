@@ -6,4 +6,4 @@ To solve this issue, our bot automates the handling of rescheduling deliveries. 
 By providing 5 different upgradable delivery tiers (Standard, Express, Timeslot, 14 day Standard, 14 day Timeslot) and easy rescheduling, we are confident customers will have better experience with Ninjavan, tailored to their needs.
 
 # Achievements
-This project 4th place at Ninja Van Code Dojo Hackathon.
+This project achieved 4th place at Ninja Van Code Dojo Hackathon 2022, held from 23 Feb to 25 Feb.
