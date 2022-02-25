@@ -55,8 +55,9 @@ def query_handler(update, context):
     # Change your comparisons depending on what you chose as 'callback_data'
     if query.data == 'view_orders_action':
         view_orders(update, context)
-    elif query.data == 'reschedule-topup':
-        top_up_reschedules(update, context)
+    elif 'reschedule-topup' in query.data:
+        order_id = query.data.split("/")[1]
+        top_up_reschedules(update, context, order_id)
     elif 'upgrade_orders_action_' in query.data:
         upgrade_orders(update, context)
     elif "view-order-id-" in query.data:
@@ -255,11 +256,11 @@ def reschedule_order(update, context, order_id):
     # choose timeslot
 
 
-def top_up_reschedules(update, context):
+def top_up_reschedules(update, context, order_id):
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title="Pay to reschedule",
                              description="Pay to reschedule after 2 times rescheduled",
-                             payload="ninja-scheduler/top-up",
+                             payload="ninja-scheduler/top-up" + order_id,
                              provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
                              currency="SGD",
                              prices=[LabeledPrice("Payment for top-up", 2 * 100)],
@@ -526,13 +527,14 @@ def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     print("precheckoutquery")
     query = update.pre_checkout_query
+    print()
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
-    elif 'topup' in query.invoice_payload:
+    elif 'top-up' in query.invoice_payload:
         payload_split = update.pre_checkout_query.invoice_payload.split('/')
-        firestore_db.collection(u'orders').document(payload_split[1]).update({
+        firestore_db.collection(u'orders').document(payload_split[2]).update({
             "numReschedules": 2
         })
         query.answer(ok=True)
