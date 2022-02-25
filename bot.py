@@ -64,6 +64,12 @@ def query_handler(update, context):
         get_order(update, context, order_id)
     elif "reschedule_orders_action" in query.data:
         order_id = query.data[24:]
+        order = firestore_db.collection(u'orders').document(order_id).get()
+        order_dict = order.to_dict()
+        date_time = order_dict["deliveryDate"].strftime("%m/%d/%Y")
+
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text="Your delivery was scheduled to reach on " + date_time)
         context.bot.send_message(chat_id=get_chat_id(update, context), text='Please select a date:',
                                  reply_markup=telegramcalendar.create_calendar(order_id))
     elif "reschedule-order-id-" in query.data:
@@ -190,8 +196,6 @@ def reschedule_order(update, context, order_id):
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
     back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
-    context.bot.send_message(chat_id=get_chat_id(update, context),
-                             text="Your delivery is scheduled to reach on" + deliveryDate.strftime("%d/%m/%Y"))
     if numReschedules <= 0:
         options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
                    InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
