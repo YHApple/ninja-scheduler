@@ -211,7 +211,7 @@ def reschedule_order(update, context, order_id):
     today = datetime.datetime.now().replace(hour=0, minute=0)
     back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
     if numReschedules <= 0:
-        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
+        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup/' + order_id)]
         keyboard = InlineKeyboardMarkup([options])
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
@@ -241,7 +241,7 @@ def reschedule_order(update, context, order_id):
                 numReschedules -= 1
                 firestore_db.collection(u'orders').document(order_id).update({
                     "deliveryDate": rescheduledDateTime,
-                    "numReschedules" : str(numReschedules)
+                    "numReschedules": str(numReschedules)
                 })
                 context.bot.send_message(chat_id=get_chat_id(update, context),
                                          text=f"Your delivery has been rescheduled to " + rescheduledDateTime.strftime("%d/%m/%Y") +
@@ -530,11 +530,9 @@ def precheckout_callback(update, context):
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
-    elif 'top-up' in query.invoice_payload:
-        print("top up")
-        user_id = update.pre_checkout_query["from"].username
-        print(user_id)
-        firestore_db.collection(u'users').document(user_id).update({
+    elif 'topup' in query.invoice_payload:
+        payload_split = update.pre_checkout_query.invoice_payload.split('/')
+        firestore_db.collection(u'orders').document(payload_split[1]).update({
             "numReschedules": 2
         })
         query.answer(ok=True)
