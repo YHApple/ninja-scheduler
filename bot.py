@@ -503,7 +503,6 @@ def update_db_after_payment(order_id, del_type):
 def successful_payment_callback(update, context):
     """Confirms the successful payment."""
     # do something after successfully receiving payment?
-
     invoice_split = update.message.successful_payment.invoice_payload.split("/")
     if 'timeslot' in invoice_split[1]:
         update.message.reply_text("Thank you for your payment! Please choose your timeslot by doing View Orders > "
@@ -513,7 +512,7 @@ def successful_payment_callback(update, context):
         doc_ref = firestore_db.collection(u'orders').document(order_id)
         order_dict = doc_ref.get().to_dict()
         date_time = order_dict["deliveryDate"]
-        print(date_time)
+        print("Datetime", date_time)
         doc_ref.update({
             "deliveryDate": date_time.replace(hour=0)
         })
