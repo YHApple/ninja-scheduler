@@ -530,7 +530,7 @@ def precheckout_callback(update, context):
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
-    elif 'top-up' in query.invoice_payload:
+    elif 'topup' in query.invoice_payload:
         payload_split = update.pre_checkout_query.invoice_payload.split('/')
         firestore_db.collection(u'orders').document(payload_split[1]).update({
             "numReschedules": 2
