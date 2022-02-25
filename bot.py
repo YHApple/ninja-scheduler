@@ -64,6 +64,12 @@ def query_handler(update, context):
         get_order(update, context, order_id)
     elif "reschedule_orders_action" in query.data:
         order_id = query.data[24:]
+        order = firestore_db.collection(u'orders').document(order_id).get()
+        order_dict = order.to_dict()
+        date_time = order_dict["deliveryDate"].strftime("%d/%m/%Y")
+
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text="Your delivery is currently scheduled to reach on " + date_time)
         context.bot.send_message(chat_id=get_chat_id(update, context), text='Please select a date:',
                                  reply_markup=telegramcalendar.create_calendar(order_id))
     elif "reschedule-order-id-" in query.data:
@@ -204,28 +210,28 @@ def reschedule_order(update, context, order_id):
     pickUpDate = order_dict['pickUpDate'].replace(tzinfo=None)
     today = datetime.datetime.now().replace(hour=0, minute=0)
     back_button = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id)
-
     if numReschedules <= 0:
-        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
-                   InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
+        options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup')]
         keyboard = InlineKeyboardMarkup([options])
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?"
                                     ,reply_markup=keyboard)
     else:
         if deliveryType == "standard" and selected:
-            minDate = today + datetime.timedelta(days=3)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=3)])
             maxDate = pickUpDate + datetime.timedelta(days=7)
         elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
-            minDate = today + datetime.timedelta(days=1)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=1)])
             maxDate = pickUpDate + datetime.timedelta(days=7)
         elif deliveryType == "14day-standard" and selected:
-            minDate = today + datetime.timedelta(days=3)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=3)])
             maxDate = pickUpDate + datetime.timedelta(days=14)
         elif deliveryType == "14day-timeslot" and selected:
-            minDate = today + datetime.timedelta(days=1)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=1)])
             maxDate = pickUpDate + datetime.timedelta(days=14)
 
+        print("minDate", minDate.strftime("%d/%m/%Y"))
+        print("maxDate", maxDate.strftime("%d/%m/%Y"))
         if dateInRange(rescheduledDateTime, minDate, maxDate):
             if "timeslot" in deliveryType:
                 context.bot.send_message(chat_id=get_chat_id(update, context),
@@ -260,57 +266,57 @@ def top_up_reschedules(update, context):
                              start_parameter="asdhjasdj")
 
 
-def reschedule(update, context):
-    if update.message.text.strip() == '/reschedule': 
-        update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
-    else:
-        # update the deliveryDate and update the numReschedules
-        order = firestore_db.collection(u'orders').document(u'1').get()
-        order_dict = order.to_dict()
-        #check if rescheduling is allowed
-        numReschedules = order_dict['numReschedules']
-        if numReschedules == 0:
-            options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
-                       InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
-            keyboard = InlineKeyboardMarkup([options])
-            context.bot.send_message(chat_id=get_chat_id(update, context),
-                                     text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?",
-                                     reply_markup=keyboard)
-        else:
-            deliveryType = order_dict['deliveryType']
-            pickUpDate = order_dict['pickUpDate'].date()
-            today = datetime.now().replace(hour=0, minute=0)
-            print(today)
-
-            userInput = update.message.text
-            #split date and time
-            splitInput = userInput.split(' ')
-            print(splitInput)
-            #split day/month/year
-            splitDate = splitInput.split('/')
-            rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
-
-            if deliveryType=="standard":
-                minDate = today + datetime.timedelta(days=3)
-                maxDate = pickUpDate + datetime.timedelta(days=7) 
-            elif deliveryType=="express" or deliveryType=="timeslot":
-                minDate = today + datetime.timedelta(days=1)
-                maxDate = pickUpDate + datetime.timedelta(days=7)
-            else:
-                minDate = today + datetime.timedelta(days=1)
-                maxDate = pickUpDate + datetime.timedelta(days=14)
-
-            if "timeslot" in deliveryType:
-                time = userInput[1]
-                rescheduleDateTime.replace(hour=int(time[:2]), minute=int(time[2:]))
-    
-            if not dateInRange(rescheduleDateTime, minDate, maxDate):
-                update.message.reply_text('Date out of range')
-            else:
-                numReschedules -= 1
-                order.update({ "numReschedules" : numReschedules })
-                order.update({ "deliveryDate" : rescheduleDateTime })
-                context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
+# def reschedule(update, context):
+#     if update.message.text.strip() == '/reschedule':
+#         update.message.reply_text("Please specify the reschedule date! \n Usage:/reschedule [dd/mm/yyyy] \n eg. /reschedule 02/24/22")
+#     else:
+#         # update the deliveryDate and update the numReschedules
+#         order = firestore_db.collection(u'orders').document(u'1').get()
+#         order_dict = order.to_dict()
+#         #check if rescheduling is allowed
+#         numReschedules = order_dict['numReschedules']
+#         if numReschedules == 0:
+#             options = [InlineKeyboardButton(text='Yes!', callback_data='reschedule-topup'),
+#                        InlineKeyboardButton(text='No...', callback_data=get_update_keyboard())]
+#             keyboard = InlineKeyboardMarkup([options])
+#             context.bot.send_message(chat_id=get_chat_id(update, context),
+#                                      text="Number of reschedules has already exceeded the limit! Would you like to pay to reschedule?",
+#                                      reply_markup=keyboard)
+#         else:
+#             deliveryType = order_dict['deliveryType']
+#             pickUpDate = order_dict['pickUpDate'].date()
+#             today = datetime.now().replace(hour=0, minute=0)
+#             print(today)
+#
+#             userInput = update.message.text
+#             #split date and time
+#             splitInput = userInput.split(' ')
+#             print(splitInput)
+#             #split day/month/year
+#             splitDate = splitInput.split('/')
+#             rescheduleDateTime = datetime.datetime(splitDate[2], splitDate[1], splitDate[0], 0, 0)
+#
+#             if deliveryType=="standard":
+#                 minDate = today + datetime.timedelta(days=3)
+#                 maxDate = pickUpDate + datetime.timedelta(days=7)
+#             elif deliveryType=="express" or deliveryType=="timeslot":
+#                 minDate = today + datetime.timedelta(days=1)
+#                 maxDate = pickUpDate + datetime.timedelta(days=7)
+#             else:
+#                 minDate = today + datetime.timedelta(days=1)
+#                 maxDate = pickUpDate + datetime.timedelta(days=14)
+#
+#             if "timeslot" in deliveryType:
+#                 time = userInput[1]
+#                 rescheduleDateTime.replace(hour=int(time[:2]), minute=int(time[2:]))
+#
+#             if not dateInRange(rescheduleDateTime, minDate, maxDate):
+#                 update.message.reply_text('Date out of range')
+#             else:
+#                 numReschedules -= 1
+#                 order.update({ "numReschedules" : numReschedules })
+#                 order.update({ "deliveryDate" : rescheduleDateTime })
+#                 context.bot.send_message(chat_id=get_chat_id(update, context), text=f"Your delivery has been rescheduled to {rescheduleDateTime}")
 
 def upgrade_orders(update, context):
     try:
@@ -518,13 +524,16 @@ def payment(update, context, current_type, new_type, type_description, order_id)
 # after (optional) shipping, it's the pre-checkout
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
+    print("precheckoutquery")
     query = update.pre_checkout_query
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     elif 'top-up' in query.invoice_payload:
-        user_id = update.callback_query.message.chat.username
+        print("top up")
+        user_id = update.pre_checkout_query
+        print(user_id)
         firestore_db.collection(u'users').document(user_id).update({
             "numReschedules": 2
         })
@@ -565,7 +574,6 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("reschedule", reschedule))
     dp.add_handler(CallbackQueryHandler(query_handler))
 
     dp.add_handler(PreCheckoutQueryHandler(precheckout_callback))
