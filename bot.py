@@ -163,7 +163,8 @@ def get_order(update, context, order_id):
         time.sleep(1)
         order = firestore_db.collection(u'orders').document(order_id).get()
         order_dict = order.to_dict()
-        date_time = order_dict["deliveryDate"].strftime("%m/%d/%Y, %H:%M:%S")
+        date_time = date_time_formatter(order_dict["deliveryDate"].strftime("%m/%d/%Y, %H:%M:%S"))
+
         del_type = order_dict["deliveryType"]
         num_res = order_dict["numReschedules"]
         text = "Your order {} is due to arrive by {}. \n The current delivery type for this order is: " \
@@ -176,6 +177,19 @@ def get_order(update, context, order_id):
         print(e)
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text="Sorry, unable to retrieve order.")
+
+def date_time_formatter(date_time):
+    date_details = date_time.split(", ")
+    if date_details[0] == "00:00:00":
+        return date_details[0]
+    elif date_details[0] == "09:00:00":
+        return date_details[0] + " 9am-12pm"
+    elif date_details[0] == "12:00:00":
+        return date_details[0] + " 12pm-3pm"
+    elif date_details[0] == "15:00:00":
+        return date_details[0] + " 3pm-6pm"
+    else:
+        return date_details[0] + " 6pm-10pm"
 
 def dateInRange(dateToCheck, minDate, maxDate):
     return minDate <= dateToCheck <= maxDate
@@ -321,7 +335,7 @@ def upgrade_order(update, context, order_id):
         time.sleep(1)
         order = firestore_db.collection(u'orders').document(order_id).get();
         order_dict = order.to_dict()
-        date_time = order_dict["deliveryDate"].strftime("%m/%d/%Y, %H:%M:%S")
+        date_time = date_time_formatter(order_dict["deliveryDate"].strftime("%m/%d/%Y, %H:%M:%S"))
         del_type = order_dict["deliveryType"]
         num_res = order_dict["numReschedules"]
         text = "Your order {} is due to arrive on {}. \nThe current delivery type for this order is: {}.\n You have {" \
