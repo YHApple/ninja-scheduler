@@ -408,7 +408,7 @@ def upgrade_to_14daystd(update, context, order_id):
         context.bot.send_message(chat_id=get_chat_id(update, context),
                                  text=UPGRADE_FAIL_MESSAGE)
 
-def get_time_keyboard(update, context, date, order_id):
+def get_time_keyboard(update, context, date, order_id, isShowBack = true):
     ReplyKeyboardRemove()
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_9-12')
     print('reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15')
@@ -417,8 +417,9 @@ def get_time_keyboard(update, context, date, order_id):
                InlineKeyboardButton(text='12pm-3pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_12-15'),
                InlineKeyboardButton(text='3pm-6pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] + '_15-18'),
                InlineKeyboardButton(text='6pm-10pm', callback_data= 'reschedule-' + order_id + "-to-" + str(date)[:10] +'_18-22')]
-    back = InlineKeyboardButton(text='←', callback_data= 'reschedule_orders_action' + order_id),
-    keyboard = InlineKeyboardMarkup([back, options])
+    back = InlineKeyboardButton(text='←', callback_data='reschedule_orders_action' + order_id),
+    keyboard = [back, options] if isShowBack else [options]
+    keyboard = InlineKeyboardMarkup(keyboard)
     return keyboard
 
 def reschedule_to_time(update, context, dateString, order_id, rescheduleTime):
@@ -505,14 +506,16 @@ def successful_payment_callback(update, context):
     # do something after successfully receiving payment?
 
     invoice_split = update.message.successful_payment.invoice_payload.split("/")
+    order_id = invoice_split[2]
+    doc_ref = firestore_db.collection(u'orders').document(order_id)
+    order_dict = doc_ref.get().to_dict()
+    date_time = order_dict["deliveryDate"]
     if 'timeslot' in invoice_split[1]:
-        update.message.reply_text("Thank you for your payment! Please choose your timeslot by doing View Orders > "
-                                  "Choose your order id > Reschedule Order")
+        update.message.reply_text("Thank you for your payment! Please choose your timeslot:")
+        context.bot.send_message(chat_id=get_chat_id(update, context),
+                                 text=f"Please select a time slot",
+                                 reply_markup=get_time_keyboard(update, context, date_time, order_id))
     else:
-        order_id = invoice_split[2]
-        doc_ref = firestore_db.collection(u'orders').document(order_id)
-        order_dict = doc_ref.get().to_dict()
-        date_time = order_dict["deliveryDate"]
         doc_ref.update({
             "deliveryDate": date_time.replace(hour=0)
         })
