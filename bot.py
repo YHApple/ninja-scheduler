@@ -201,16 +201,16 @@ def reschedule_order(update, context, order_id):
                                     ,reply_markup=keyboard)
     else:
         if deliveryType == "standard" and selected:
-            minDate = today + datetime.timedelta(days=3)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=3)])
             maxDate = pickUpDate + datetime.timedelta(days=7)
         elif (deliveryType == "express" or deliveryType == "timeslot") and selected:
-            minDate = today + datetime.timedelta(days=1)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=1)])
             maxDate = pickUpDate + datetime.timedelta(days=7)
         elif deliveryType == "14day-standard" and selected:
-            minDate = today + datetime.timedelta(days=3)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=3)])
             maxDate = pickUpDate + datetime.timedelta(days=14)
         elif deliveryType == "14day-timeslot" and selected:
-            minDate = today + datetime.timedelta(days=1)
+            minDate = max([today, pickUpDate + datetime.timedelta(days=1)])
             maxDate = pickUpDate + datetime.timedelta(days=14)
 
         print("minDate", minDate.strftime("%d/%m/%Y"))
