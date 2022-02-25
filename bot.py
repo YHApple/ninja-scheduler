@@ -260,7 +260,7 @@ def top_up_reschedules(update, context, order_id):
     context.bot.send_invoice(chat_id=get_chat_id(update, context),
                              title="Pay to reschedule",
                              description="Pay to reschedule after 2 times rescheduled",
-                             payload="ninja-scheduler/top-up" + order_id,
+                             payload="ninja-scheduler/top-up/" + order_id,
                              provider_token="284685063:TEST:YTM1ZGYzNDlhMWI3",
                              currency="SGD",
                              prices=[LabeledPrice("Payment for top-up", 2 * 100)],
