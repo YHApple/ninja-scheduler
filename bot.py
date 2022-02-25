@@ -186,13 +186,13 @@ def get_order(update, context, order_id):
 
 def date_time_formatter(date_time):
     date_details = date_time.split(", ")
-    if date_details[0] == "00:00:00":
+    if date_details[1] == "00:00:00":
         return date_details[0]
     elif date_details[0] == "09:00:00":
         return date_details[0] + " 9am-12pm"
-    elif date_details[0] == "12:00:00":
+    elif date_details[1] == "12:00:00":
         return date_details[0] + " 12pm-3pm"
-    elif date_details[0] == "15:00:00":
+    elif date_details[1] == "15:00:00":
         return date_details[0] + " 3pm-6pm"
     else:
         return date_details[0] + " 6pm-10pm"
