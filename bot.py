@@ -510,13 +510,16 @@ def payment(update, context, current_type, new_type, type_description, order_id)
 # after (optional) shipping, it's the pre-checkout
 def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
+    print("precheckoutquery")
     query = update.pre_checkout_query
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
         query.answer(ok=False, error_message="Something went wrong...")
     elif 'top-up' in query.invoice_payload:
+        print("top up")
         user_id = update.callback_query.message.chat.username
+        print(user_id)
         firestore_db.collection(u'users').document(user_id).update({
             "numReschedules": 2
         })
