@@ -476,7 +476,7 @@ def precheckout_callback(update, context):
     """Answers the PrecheckoutQuery"""
     print("precheckoutquery")
     query = update.pre_checkout_query
-    print()
+    print(query)
     # check the payload, is this from your bot?
     if 'ninja-scheduler' not in query.invoice_payload:
         # answer False pre_checkout_query
@@ -507,14 +507,16 @@ def successful_payment_callback(update, context):
     if 'timeslot' in invoice_split[1]:
         update.message.reply_text("Thank you for your payment! Please choose your timeslot by doing View Orders > "
                                   "Choose your order id > Reschedule Order")
+    elif 'top-up' in update.message.successful_payment.invoice_payload:
+        update.message.reply_text("Thank you for your payment! You may now reschedule your order!")
     else:
         order_id = invoice_split[2]
         doc_ref = firestore_db.collection(u'orders').document(order_id)
         order_dict = doc_ref.get().to_dict()
         date_time = order_dict["deliveryDate"]
-        print("Datetime", date_time)
+        new_time = date_time.replace(hour=0)
         doc_ref.update({
-            "deliveryDate": date_time.replace(hour=0)
+            "deliveryDate": new_time
         })
         update.message.reply_text("Thank you for your payment!")
     start(update, context)
