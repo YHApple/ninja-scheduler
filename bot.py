@@ -237,7 +237,7 @@ def reschedule_order(update, context, order_id):
             if "timeslot" in deliveryType:
                 context.bot.send_message(chat_id=get_chat_id(update, context),
                                         text=f"Please select a time slot",
-                                        reply_markup=get_time_keyboard(update, context, rescheduledDateTime, order_id))
+                                        reply_markup=get_time_keyboard(update, context, rescheduledDateTime, order_id, False))
             else:
                 numReschedules -= 1
                 firestore_db.collection(u'orders').document(order_id).update({
